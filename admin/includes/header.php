@@ -28,6 +28,7 @@ if ($current_file !== 'login.php') {
             position: fixed;
             height: 100vh;
             overflow-y: auto;
+            z-index: 1000;
         }
         
         .admin-brand {
@@ -35,6 +36,7 @@ if ($current_file !== 'login.php') {
             margin-bottom: 2rem;
             font-size: 1.5rem;
             font-weight: bold;
+            position: relative;
         }
         
         .admin-nav {
@@ -48,7 +50,8 @@ if ($current_file !== 'login.php') {
         }
         
         .admin-nav a {
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 0.75rem 1.5rem;
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
@@ -399,6 +402,81 @@ if ($current_file !== 'login.php') {
             font-size: 0.7rem;
             padding: 0.75rem 0 0.25rem 0;
         }
+        
+        /* Expandable sections styling */
+        .nav-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            transition: background 0.3s ease;
+            border-radius: 6px;
+            margin: 0.125rem 0.5rem;
+        }
+        
+        .nav-section-header:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .nav-section-header i {
+            width: 20px;
+            margin-right: 10px;
+            text-align: center;
+        }
+        
+        .nav-section-header .section-toggle {
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-section-header.collapsed .section-toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .nav-section-items {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .nav-section-items.collapsed {
+            max-height: 0;
+        }
+        
+        .nav-section-items li a {
+            padding-left: 3rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                width: 60px;
+            }
+            
+            .admin-sidebar .admin-brand span,
+            .admin-sidebar .admin-nav li a span,
+            .admin-sidebar .nav-label {
+                display: none;
+            }
+            
+            .admin-sidebar .admin-nav li a {
+                padding: 0.75rem;
+                text-align: center;
+                justify-content: center;
+            }
+            
+            .admin-sidebar .admin-nav li a i {
+                margin-right: 0;
+                width: auto;
+            }
+            
+            .admin-content {
+                margin-left: 60px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -431,29 +509,39 @@ if ($current_file !== 'login.php') {
                     <span class="nav-label">Inventory Management</span>
                 </li>
                 <li>
-                    <a href="products.php" class="<?php echo $current_file === 'products.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-car-alt"></i> Products
-                    </a>
-                </li>
-                <li>
-                    <a href="add_product.php" class="<?php echo $current_file === 'add_product.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-plus-circle"></i> Add Product
-                    </a>
-                </li>
-                <li>
-                    <a href="inventory.php" class="<?php echo $current_file === 'inventory.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-boxes"></i> Inventory Overview
-                    </a>
-                </li>
-                <li>
-                    <a href="brands.php" class="<?php echo $current_file === 'brands.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-tags"></i> Brands
-                    </a>
-                </li>
-                <li>
-                    <a href="sizes.php" class="<?php echo $current_file === 'sizes.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-ruler"></i> Sizes
-                    </a>
+                    <div class="nav-section-header" data-section="inventory">
+                        <div>
+                            <i class="fas fa-boxes"></i> Inventory
+                        </div>
+                        <i class="fas fa-chevron-down section-toggle"></i>
+                    </div>
+                    <ul class="nav-section-items" id="inventory-section">
+                        <li>
+                            <a href="products.php" class="<?php echo $current_file === 'products.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-car-alt"></i> Products
+                            </a>
+                        </li>
+                        <li>
+                            <a href="add_product.php" class="<?php echo $current_file === 'add_product.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-plus-circle"></i> Add Product
+                            </a>
+                        </li>
+                        <li>
+                            <a href="inventory.php" class="<?php echo $current_file === 'inventory.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-boxes"></i> Inventory Overview
+                            </a>
+                        </li>
+                        <li>
+                            <a href="brands.php" class="<?php echo $current_file === 'brands.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-tags"></i> Brands
+                            </a>
+                        </li>
+                        <li>
+                            <a href="sizes.php" class="<?php echo $current_file === 'sizes.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-ruler"></i> Sizes
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 
                 <!-- Location Management Section -->
@@ -461,9 +549,19 @@ if ($current_file !== 'login.php') {
                     <span class="nav-label">Location Management</span>
                 </li>
                 <li>
-                    <a href="locations.php" class="<?php echo in_array($current_file, ['locations.php', 'add_location.php', 'edit_location.php']) ? 'active' : ''; ?>">
-                        <i class="fas fa-map-marker-alt"></i> Locations
-                    </a>
+                    <div class="nav-section-header" data-section="locations">
+                        <div>
+                            <i class="fas fa-map-marker-alt"></i> Locations
+                        </div>
+                        <i class="fas fa-chevron-down section-toggle"></i>
+                    </div>
+                    <ul class="nav-section-items" id="locations-section">
+                        <li>
+                            <a href="locations.php" class="<?php echo in_array($current_file, ['locations.php', 'add_location.php', 'edit_location.php']) ? 'active' : ''; ?>">
+                                <i class="fas fa-map-marker-alt"></i> Locations
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 
                 <!-- Services Section -->
@@ -471,19 +569,29 @@ if ($current_file !== 'login.php') {
                     <span class="nav-label">Services</span>
                 </li>
                 <li>
-                    <a href="services.php" class="<?php echo $current_file === 'services.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-tools"></i> Services
-                    </a>
-                </li>
-                <li>
-                    <a href="add_service.php" class="<?php echo $current_file === 'add_service.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-plus-circle"></i> Add Service
-                    </a>
-                </li>
-                <li>
-                    <a href="service_categories.php" class="<?php echo $current_file === 'service_categories.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-tags"></i> Service Categories
-                    </a>
+                    <div class="nav-section-header" data-section="services">
+                        <div>
+                            <i class="fas fa-tools"></i> Services
+                        </div>
+                        <i class="fas fa-chevron-down section-toggle"></i>
+                    </div>
+                    <ul class="nav-section-items" id="services-section">
+                        <li>
+                            <a href="services.php" class="<?php echo $current_file === 'services.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-tools"></i> Services
+                            </a>
+                        </li>
+                        <li>
+                            <a href="add_service.php" class="<?php echo $current_file === 'add_service.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-plus-circle"></i> Add Service
+                            </a>
+                        </li>
+                        <li>
+                            <a href="service_categories.php" class="<?php echo $current_file === 'service_categories.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-tags"></i> Service Categories
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 
                 <!-- User Management Section -->
@@ -491,9 +599,19 @@ if ($current_file !== 'login.php') {
                     <span class="nav-label">User Management</span>
                 </li>
                 <li>
-                    <a href="profile.php" class="<?php echo $current_file === 'profile.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-user"></i> Profile
-                    </a>
+                    <div class="nav-section-header" data-section="users">
+                        <div>
+                            <i class="fas fa-users"></i> Users
+                        </div>
+                        <i class="fas fa-chevron-down section-toggle"></i>
+                    </div>
+                    <ul class="nav-section-items" id="users-section">
+                        <li>
+                            <a href="profile.php" class="<?php echo $current_file === 'profile.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </aside>
@@ -527,4 +645,33 @@ if ($current_file !== 'login.php') {
                         unset($_SESSION['error_message']);
                     ?>
                 </div>
-            <?php endif; ?> 
+            <?php endif; ?>
+            
+            <script>
+                // Expandable sections functionality
+                document.addEventListener('DOMContentLoaded', function() {
+                    const sectionHeaders = document.querySelectorAll('.nav-section-header');
+                    
+                    sectionHeaders.forEach(header => {
+                        const sectionName = header.getAttribute('data-section');
+                        const sectionItems = document.getElementById(sectionName + '-section');
+                        
+                        // Check if section state is stored in localStorage
+                        const isCollapsed = localStorage.getItem('section_' + sectionName) === 'collapsed';
+                        
+                        if (isCollapsed) {
+                            header.classList.add('collapsed');
+                            sectionItems.classList.add('collapsed');
+                        }
+                        
+                        header.addEventListener('click', function() {
+                            header.classList.toggle('collapsed');
+                            sectionItems.classList.toggle('collapsed');
+                            
+                            // Store the state in localStorage
+                            const isNowCollapsed = header.classList.contains('collapsed');
+                            localStorage.setItem('section_' + sectionName, isNowCollapsed ? 'collapsed' : 'expanded');
+                        });
+                    });
+                });
+            </script> 
