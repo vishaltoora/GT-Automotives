@@ -56,10 +56,11 @@ jobs:
         run: |
           scp -i ~/.ssh/lightsail_key.pem -o StrictHostKeyChecking=no build.zip ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/tmp/
 
-             ssh -i ~/.ssh/lightsail_key.pem -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
-              cd /opt/bitnami/apache2/htdocs || exit 1
-               sudo rm -rf *
-              sudo unzip -o /tmp/build.zip -d .
-            sudo /opt/bitnami/ctlscript.sh restart apache
-           EOF
+          ssh -i ~/.ssh/lightsail_key.pem -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+          cd /opt/bitnami/apache2/htdocs || exit 1
+          sudo rm -rf *
+          sudo unzip -o /tmp/build.zip -d .
+          sudo /opt/bitnami/ctlscript.sh restart apache
+          EOF
+
 
