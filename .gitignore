@@ -1,27 +1,20 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
 # Database files
 *.db
 *.sqlite
 *.sqlite3
 
-# Configuration files with sensitive data
-config.php
-.env
-
-# Log files
+# Logs
 *.log
+logs/
 
-# Temporary files
-*.tmp
-*.temp
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Cache
+cache/
+tmp/
 
 # IDE files
 .vscode/
@@ -29,20 +22,9 @@ Thumbs.db
 *.swp
 *.swo
 
-# Uploaded files
-uploads/
-images/uploads/
-
-# Cache files
-cache/
-*.cache
-
-# Backup files
-*.bak
-*.backup
-
-# PHP session files
-sessions/
+# OS files
+.DS_Store
+Thumbs.db
 
 # Composer
 vendor/
@@ -52,6 +34,6 @@ composer.lock
 node_modules/
 npm-debug.log*
 
-# Environment variables
-.env.local
-.env.production 
+# Backup files
+*.bak
+*.backup 

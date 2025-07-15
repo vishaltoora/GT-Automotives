@@ -68,6 +68,7 @@ body {
 .hero {
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   height: 80vh;
   display: flex;
   align-items: center;
@@ -75,23 +76,39 @@ body {
   text-align: center;
   color: #fff;
   margin-top: 60px;
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(36, 60, 85, 0.7);
+  z-index: 1;
 }
 
 .hero-content {
   max-width: 800px;
   padding: 2rem;
+  position: relative;
+  z-index: 2;
 }
 
 .hero h1 {
   font-size: 3rem;
   margin-bottom: 1rem;
   animation: fadeIn 1s ease-in;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .hero p {
   font-size: 1.2rem;
   margin-bottom: 2rem;
   animation: fadeIn 1s ease-in 0.5s backwards;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* -----------------------------
