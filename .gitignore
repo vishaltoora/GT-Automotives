@@ -36,4 +36,8 @@ npm-debug.log*
 
 # Backup files
 *.bak
-*.backup 
+*.backup
+
+# Uploads and compressed images
+uploads/
+images/uploads/ 

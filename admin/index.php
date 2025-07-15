@@ -4,6 +4,47 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Include error handler for debugging
+require_once '../includes/error_handler.php';
+
+// Enable debugging if requested
+if (isset($_GET['debug'])) {
+    echo "<div style='background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; margin: 10px; border-radius: 4px;'>";
+    echo "<strong>Admin Debug Mode Enabled</strong><br>";
+    echo "Server: " . $_SERVER['SERVER_NAME'] . "<br>";
+    echo "PHP Version: " . phpversion() . "<br>";
+    echo "Document Root: " . $_SERVER['DOCUMENT_ROOT'] . "<br>";
+    echo "</div>";
+}
+
+// Test database connection
+try {
+    $conn = testDatabaseConnection();
+    echo isset($_GET['debug']) ? "<div style='background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; margin: 10px; border-radius: 4px;'>✅ Admin database connection successful</div>" : "";
+} catch (Exception $e) {
+    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+    echo "<strong>Admin Database Error:</strong> " . htmlspecialchars($e->getMessage());
+    echo "</div>";
+    // Continue with limited functionality
+}
+
+// Check required extensions
+$missing_extensions = checkRequiredExtensions();
+if (!empty($missing_extensions)) {
+    echo "<div style='background: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin: 10px; border-radius: 4px;'>";
+    echo "<strong>Missing PHP Extensions:</strong> " . implode(', ', $missing_extensions);
+    echo "</div>";
+}
+
+// Ensure uploads directory exists
+try {
+    ensureUploadsDirectory();
+} catch (Exception $e) {
+    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+    echo "<strong>Uploads Directory Error:</strong> " . htmlspecialchars($e->getMessage());
+    echo "</div>";
+}
+
 // Include database connection
 require_once '../includes/db_connect.php';
 require_once '../includes/auth.php';

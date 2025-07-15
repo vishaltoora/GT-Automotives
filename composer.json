@@ -1,0 +1,17 @@
+{
+  "name": "gt-automotives/web-app",
+  "description": "GT Automotives - Premium Tire Shop Web Application",
+  "type": "project",
+  "require": {
+    "php": ">=7.4",
+    "intervention/image": "^2.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "GTAutomotives\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true
+  }
+}

@@ -577,18 +577,23 @@ if ($current_file !== 'login.php') {
                     </div>
                     <ul class="nav-section-items" id="services-section">
                         <li>
-                            <a href="services.php" class="<?php echo $current_file === 'services.php' ? 'active' : ''; ?>">
-                                <i class="fas fa-tools"></i> Services
+                            <a href="services.php" class="<?php echo $current_file === 'services.php' ? 'active' : ''; ?>" data-title="Services">
+                                <i class="fas fa-tools"></i> <span>Services</span>
                             </a>
                         </li>
                         <li>
-                            <a href="add_service.php" class="<?php echo $current_file === 'add_service.php' ? 'active' : ''; ?>">
-                                <i class="fas fa-plus-circle"></i> Add Service
+                            <a href="add_service.php" class="<?php echo $current_file === 'add_service.php' ? 'active' : ''; ?>" data-title="Add Service">
+                                <i class="fas fa-plus-circle"></i> <span>Add Service</span>
                             </a>
                         </li>
                         <li>
-                            <a href="service_categories.php" class="<?php echo $current_file === 'service_categories.php' ? 'active' : ''; ?>">
-                                <i class="fas fa-tags"></i> Service Categories
+                            <a href="service_categories.php" class="<?php echo $current_file === 'service_categories.php' ? 'active' : ''; ?>" data-title="Service Categories">
+                                <i class="fas fa-tags"></i> <span>Service Categories</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="image_compressor.php" class="<?php echo $current_file === 'image_compressor.php' ? 'active' : ''; ?>" data-title="Image Compressor">
+                                <i class="fas fa-compress"></i> <span>Image Compressor</span>
                             </a>
                         </li>
                     </ul>
