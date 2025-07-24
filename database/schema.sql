@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     email TEXT NOT NULL,
-    is_admin INTEGER DEFAULT 1,
+    is_admin INTEGER DEFAULT 1 AUTOINCREMENT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -73,6 +73,13 @@ CREATE TABLE IF NOT EXISTS users (
 -- Insert default admin user (password: admin123)
 INSERT INTO users (username, password, email, is_admin) 
 VALUES ('admin', '$2y$10$Nq/VTTeC7NqIrdWUwJJvR.mRXMy8YH3wF5WKIUG63yzsCEP3Cq34q', 'admin@gtautomotives.com', 1);
+
+INSERT INTO users (username, password, email) VALUES (
+  'rohit.toora',
+  '$2y$10$.eE74/xeHHDp4ngIaWtBTexAmf7SgyjC3eanwlYoeSotwqrvyp38e',
+  'rohit.toora@gmail.com'
+);
+
 
 -- Create inquiries table
 CREATE TABLE IF NOT EXISTS inquiries (
