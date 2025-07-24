@@ -1,6 +1,6 @@
 <?php
 // Database configuration for SQLite
-$db_path = __DIR__ . '/../database/gt_automotives.db';
+$db_path = __DIR__ . '/../database/gt_automotives';
 
 // Create database directory if it doesn't exist
 if (!file_exists(dirname($db_path))) {
