@@ -1,6 +1,6 @@
 <?php
 // Initialize the SQLite database
-$db_path = __DIR__ . '/gt_automotives';
+$db_path = __DIR__ . '/gt_automotives.db';
 $schema_path = __DIR__ . '/schema.sql';
 
 // Create database connection
