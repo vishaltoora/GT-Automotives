@@ -36,9 +36,9 @@ if (!empty($search)) {
 if ($status_filter !== 'all') {
     $escaped_status = SQLite3::escapeString($status_filter);
     if (!empty($search_condition)) {
-        $search_condition .= " AND t.condition = '$escaped_status'";
+        $search_condition .= " AND t.`condition` = '$escaped_status'";
     } else {
-        $search_condition = "WHERE t.condition = '$escaped_status'";
+        $search_condition = "WHERE t.`condition` = '$escaped_status'";
     }
 }
 

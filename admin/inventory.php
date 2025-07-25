@@ -26,11 +26,11 @@ $total_products_query = "SELECT COUNT(*) as count FROM tires";
 $total_products_result = $conn->query($total_products_query);
 $total_products = $total_products_result->fetchArray(SQLITE3_ASSOC)['count'];
 
-$new_tires_query = "SELECT COUNT(*) as count FROM tires WHERE condition = 'new'";
+$new_tires_query = "SELECT COUNT(*) as count FROM tires WHERE `condition` = 'new'";
 $new_tires_result = $conn->query($new_tires_query);
 $new_tires_count = $new_tires_result->fetchArray(SQLITE3_ASSOC)['count'];
 
-$used_tires_query = "SELECT COUNT(*) as count FROM tires WHERE condition = 'used'";
+$used_tires_query = "SELECT COUNT(*) as count FROM tires WHERE `condition` = 'used'";
 $used_tires_result = $conn->query($used_tires_query);
 $used_tires_count = $used_tires_result->fetchArray(SQLITE3_ASSOC)['count'];
 
@@ -54,7 +54,7 @@ $inventory_query = "SELECT t.*, b.name as brand_name, l.name as location_name, '
 $where_conditions = [];
 
 if ($condition_filter !== 'all') {
-    $where_conditions[] = "t.condition = '" . SQLite3::escapeString($condition_filter) . "'";
+    $where_conditions[] = "t.`condition` = '" . SQLite3::escapeString($condition_filter) . "'";
 }
 
 if (!empty($brand_filter)) {

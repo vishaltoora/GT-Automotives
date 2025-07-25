@@ -15,10 +15,12 @@ requireLogin();
 $page_title = 'Create New Sale';
 
 // Get all products with brand names
-$products_query = "SELECT t.*, b.name as brand_name FROM tires t 
-                  LEFT JOIN brands b ON t.brand_id = b.id 
-                  WHERE t.stock_quantity > 0 
-                  ORDER BY t.condition DESC, b.name, t.name";
+$products_query = "SELECT t.id, t.name, t.size, t.price, t.stock_quantity, t.`condition`, b.name as brand_name, l.name as location_name 
+    FROM tires t 
+    LEFT JOIN brands b ON t.brand_id = b.id 
+    LEFT JOIN locations l ON t.location_id = l.id 
+    WHERE t.stock_quantity > 0 
+    ORDER BY t.`condition` DESC, b.name, t.name";
 $products_result = $conn->query($products_query);
 
 $products = [];
