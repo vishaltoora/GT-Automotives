@@ -20,9 +20,17 @@ if (!$sale_id) {
 }
 
 // Get sale details with creator info
-$sale_query = "SELECT s.*, u.username as created_by_name FROM sales s 
-               LEFT JOIN users u ON s.created_by = u.id 
-               WHERE s.id = ?";
+$sale_query = "SELECT s.*, u.username as created_by_name,
+                   si.quantity, si.unit_price, si.total_price,
+                   t.name as tire_name, t.size, t.`condition`, b.name as brand_name,
+                   l.name as location_name
+                   FROM sales s
+                   LEFT JOIN users u ON s.created_by = u.id
+                   LEFT JOIN sale_items si ON s.id = si.sale_id
+                   LEFT JOIN tires t ON si.tire_id = t.id
+                   LEFT JOIN brands b ON t.brand_id = b.id
+                   LEFT JOIN locations l ON t.location_id = l.id
+                   WHERE s.id = ?";
 $sale_stmt = $conn->prepare($sale_query);
 $sale_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
 $sale_result = $sale_stmt->execute();

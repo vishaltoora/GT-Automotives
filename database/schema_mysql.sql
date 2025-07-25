@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS tires (
     description TEXT,
     image_url VARCHAR(500),
     stock_quantity INT NOT NULL DEFAULT 0,
-    condition ENUM('new', 'used') DEFAULT 'new',
+    `condition` ENUM('new', 'used') DEFAULT 'new',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS used_tire_photos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert sample tire data (updated to use brand_id)
-INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, condition) VALUES
+INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, `condition`) VALUES
 (1, 'Pilot Sport 4S', '225/45R17', 199.99, 'High-performance summer tire with excellent grip and handling.', 'images/tires/michelin-pilot-sport-4s.jpg', 50, 'new'),
 (2, 'Potenza RE-71R', '245/40R18', 189.99, 'Ultra-high performance summer tire for track and street use.', 'images/tires/bridgestone-potenza-re71r.jpg', 40, 'new'),
 (4, 'ExtremeContact DWS06', '235/45R17', 179.99, 'All-season ultra-high performance tire with excellent wet and dry handling.', 'images/tires/continental-dws06.jpg', 45, 'new'),

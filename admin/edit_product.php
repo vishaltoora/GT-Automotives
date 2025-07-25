@@ -164,11 +164,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // If no errors, update the product
     if (empty($errors)) {
-        $query = "UPDATE tires 
-                 SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, condition = ?, location_id = ? 
-                 WHERE id = ?";
+        $stmt = $conn->prepare("
+            UPDATE tires 
+            SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, `condition` = ?, location_id = ?
+            WHERE id = ?
+        ");
         
-        $stmt = $conn->prepare($query);
         $stmt->bindValue(1, $brand_id, SQLITE3_INTEGER);
         $stmt->bindValue(2, $product_type, SQLITE3_TEXT);
         $stmt->bindValue(3, $size, SQLITE3_TEXT);
