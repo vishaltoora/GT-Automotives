@@ -22,56 +22,50 @@ $location_filter = $_GET['location'] ?? '';
 $search_filter = $_GET['search'] ?? '';
 
 // Get inventory statistics
-$total_products_query = "SELECT COUNT(*) as count FROM tires";
-$total_products_result = $conn->query($total_products_query);
-$total_products = $total_products_result->fetchArray(SQLITE3_ASSOC)['count'];
+$total_products_result = $conn->query("SELECT COUNT(*) as count FROM tires");
+$total_products = $total_products_result->fetch_assoc()['count'];
 
-$new_tires_query = "SELECT COUNT(*) as count FROM tires WHERE `condition` = 'new'";
-$new_tires_result = $conn->query($new_tires_query);
-$new_tires_count = $new_tires_result->fetchArray(SQLITE3_ASSOC)['count'];
+$new_tires_result = $conn->query("SELECT COUNT(*) as count FROM tires WHERE `condition` = 'new'");
+$new_tires_count = $new_tires_result->fetch_assoc()['count'];
 
-$used_tires_query = "SELECT COUNT(*) as count FROM tires WHERE `condition` = 'used'";
-$used_tires_result = $conn->query($used_tires_query);
-$used_tires_count = $used_tires_result->fetchArray(SQLITE3_ASSOC)['count'];
+$used_tires_result = $conn->query("SELECT COUNT(*) as count FROM tires WHERE `condition` = 'used'");
+$used_tires_count = $used_tires_result->fetch_assoc()['count'];
 
-$low_stock_query = "SELECT COUNT(*) as count FROM tires WHERE stock_quantity <= 5 AND stock_quantity > 0";
-$low_stock_result = $conn->query($low_stock_query);
-$low_stock_count = $low_stock_result->fetchArray(SQLITE3_ASSOC)['count'];
+$low_stock_result = $conn->query("SELECT COUNT(*) as count FROM tires WHERE stock_quantity > 0 AND stock_quantity <= 5");
+$low_stock_count = $low_stock_result->fetch_assoc()['count'];
 
-$out_of_stock_query = "SELECT COUNT(*) as count FROM tires WHERE stock_quantity = 0";
-$out_of_stock_result = $conn->query($out_of_stock_query);
-$out_of_stock_count = $out_of_stock_result->fetchArray(SQLITE3_ASSOC)['count'];
+$out_of_stock_result = $conn->query("SELECT COUNT(*) as count FROM tires WHERE stock_quantity = 0");
+$out_of_stock_count = $out_of_stock_result->fetch_assoc()['count'];
 
-$total_value_query = "SELECT SUM(stock_quantity * price) as total_value FROM tires WHERE stock_quantity > 0";
-$total_value_result = $conn->query($total_value_query);
-$total_value = $total_value_result->fetchArray(SQLITE3_ASSOC)['total_value'] ?? 0;
+$total_value_result = $conn->query("SELECT SUM(price * stock_quantity) as total_value FROM tires");
+$total_value = $total_value_result->fetch_assoc()['total_value'] ?? 0;
 
 // Build inventory query with filters
-$inventory_query = "SELECT t.*, b.name as brand_name, l.name as location_name, 'tire' as item_type FROM tires t 
-                   LEFT JOIN brands b ON t.brand_id = b.id 
+$inventory_query = "SELECT t.*, b.name as brand_name, l.name as location_name, 'tire' as item_type FROM tires t
+                   LEFT JOIN brands b ON t.brand_id = b.id
                    LEFT JOIN locations l ON t.location_id = l.id";
 
 $where_conditions = [];
 
-if ($condition_filter !== 'all') {
-    $where_conditions[] = "t.`condition` = '" . SQLite3::escapeString($condition_filter) . "'";
+if (!empty($condition_filter)) {
+    $where_conditions[] = "t.`condition` = '" . mysqli_real_escape_string($conn, $condition_filter) . "'";
 }
 
 if (!empty($brand_filter)) {
-    $where_conditions[] = "b.name = '" . SQLite3::escapeString($brand_filter) . "'";
+    $where_conditions[] = "b.name = '" . mysqli_real_escape_string($conn, $brand_filter) . "'";
 }
 
 if (!empty($size_filter)) {
-    $where_conditions[] = "t.size = '" . SQLite3::escapeString($size_filter) . "'";
+    $where_conditions[] = "t.size = '" . mysqli_real_escape_string($conn, $size_filter) . "'";
 }
 
 if (!empty($location_filter)) {
-    $where_conditions[] = "t.location_id = '" . SQLite3::escapeString($location_filter) . "'";
+    $where_conditions[] = "t.location_id = '" . mysqli_real_escape_string($conn, $location_filter) . "'";
 }
 
 if (!empty($search_filter)) {
-    $escaped_search = SQLite3::escapeString($search_filter);
-    $where_conditions[] = "(t.name LIKE '%$escaped_search%' OR t.description LIKE '%$escaped_search%' OR b.name LIKE '%$escaped_search%' OR t.size LIKE '%$escaped_search%')";
+    $escaped_search = mysqli_real_escape_string($conn, $search_filter);
+    $where_conditions[] = "(t.name LIKE '%$escaped_search%' OR t.description LIKE '%$escaped_search%' OR b.name LIKE '%$escaped_search%')";
 }
 
 if (!empty($where_conditions)) {
@@ -82,7 +76,7 @@ $inventory_query .= " ORDER BY t.stock_quantity ASC, b.name, t.name";
 $inventory_result = $conn->query($inventory_query);
 
 $inventory_items = [];
-while ($row = $inventory_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $inventory_result->fetch_assoc()) {
     $inventory_items[] = $row;
 }
 
@@ -101,7 +95,7 @@ include_once 'includes/header.php';
 ?>
 
 <div class="admin-header">
-  
+
     <div class="admin-actions">
         <a href="products.php" class="btn btn-primary">
             <i class="fas fa-boxes"></i> Manage Products
@@ -124,50 +118,50 @@ include_once 'includes/header.php';
                     <option value="used" <?php echo $condition_filter === 'used' ? 'selected' : ''; ?>>Used Tires</option>
                 </select>
             </div>
-            
+
             <div class="filter-group">
                 <label for="brand">Filter by Brand:</label>
                 <select name="brand" id="brand">
                     <option value="">All Brands</option>
-                    <?php while ($brand = $brands_result->fetchArray(SQLITE3_ASSOC)): ?>
-                        <option value="<?php echo htmlspecialchars($brand['brand']); ?>" <?php echo $brand_filter === $brand['brand'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($brand['brand']); ?>
+                    <?php while ($brand = $brands_result->fetch_assoc()): ?>
+                        <option value="<?php echo htmlspecialchars($brand['name']); ?>" <?php echo $brand_filter === $brand['name'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($brand['name']); ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
             </div>
-            
+
             <div class="filter-group">
                 <label for="size">Filter by Size:</label>
                 <select name="size" id="size">
                     <option value="">All Sizes</option>
-                    <?php while ($size = $sizes_result->fetchArray(SQLITE3_ASSOC)): ?>
+                    <?php while ($size = $sizes_result->fetch_assoc()): ?>
                         <option value="<?php echo htmlspecialchars($size['size']); ?>" <?php echo $size_filter === $size['size'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($size['size']); ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
             </div>
-            
+
             <div class="filter-group">
                 <label for="location">Filter by Location:</label>
                 <select name="location" id="location">
                     <option value="">All Locations</option>
-                    <?php while ($location = $locations_result->fetchArray(SQLITE3_ASSOC)): ?>
-                        <option value="<?php echo htmlspecialchars($location['id']); ?>" <?php echo $location_filter == $location['id'] ? 'selected' : ''; ?>>
+                    <?php while ($location = $locations_result->fetch_assoc()): ?>
+                        <option value="<?php echo $location['id']; ?>" <?php echo $location_filter == $location['id'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($location['name']); ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
             </div>
         </div>
-        
+
         <div class="filter-row">
             <div class="filter-group search-group">
                 <label for="search">Search:</label>
                 <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search_filter); ?>" placeholder="Search by name, description, brand, or size...">
             </div>
-            
+
             <div class="filter-buttons">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-search"></i> Apply Filters
@@ -192,7 +186,7 @@ include_once 'includes/header.php';
         <div class="admin-card-value"><?php echo $total_products; ?></div>
         <div class="admin-card-label">Products in inventory</div>
     </div>
-    
+
     <div class="admin-card">
         <div class="admin-card-header">
             <h2>New Tires</h2>
@@ -203,7 +197,7 @@ include_once 'includes/header.php';
         <div class="admin-card-value"><?php echo $new_tires_count; ?></div>
         <div class="admin-card-label">New tire products</div>
     </div>
-    
+
     <div class="admin-card">
         <div class="admin-card-header">
             <h2>Used Tires</h2>
@@ -214,7 +208,7 @@ include_once 'includes/header.php';
         <div class="admin-card-value"><?php echo $used_tires_count; ?></div>
         <div class="admin-card-label">Used tire products</div>
     </div>
-    
+
     <div class="admin-card">
         <div class="admin-card-header">
             <h2>Low Stock</h2>
@@ -225,7 +219,7 @@ include_once 'includes/header.php';
         <div class="admin-card-value"><?php echo $low_stock_count; ?></div>
         <div class="admin-card-label">Products with ≤5 units</div>
     </div>
-    
+
     <div class="admin-card">
         <div class="admin-card-header">
             <h2>Out of Stock</h2>
@@ -236,7 +230,7 @@ include_once 'includes/header.php';
         <div class="admin-card-value"><?php echo $out_of_stock_count; ?></div>
         <div class="admin-card-label">Products with 0 units</div>
     </div>
-    
+
     <div class="admin-card">
         <div class="admin-card-header">
             <h2>Inventory Value</h2>
@@ -252,7 +246,7 @@ include_once 'includes/header.php';
 <!-- Inventory Table -->
 <div class="inventory-header">
     <h2>
-        Current Inventory 
+        Current Inventory
         <?php if ($condition_filter !== 'all'): ?>
             (<?php echo ucfirst($condition_filter); ?> Tires)
         <?php endif; ?>
@@ -260,20 +254,19 @@ include_once 'includes/header.php';
             - Search Results
         <?php endif; ?>
     </h2>
-    
+
     <?php if (!empty($brand_filter) || !empty($size_filter) || !empty($search_filter)): ?>
         <div class="search-summary">
             <strong>Active Filters:</strong>
-            <?php 
+            <?php
             $active_filters = [];
             if (!empty($brand_filter)) $active_filters[] = "Brand: " . htmlspecialchars($brand_filter);
             if (!empty($size_filter)) $active_filters[] = "Size: " . htmlspecialchars($size_filter);
             if (!empty($location_filter)) {
-                $location_name_query = "SELECT name FROM locations WHERE id = ?";
-                $location_name_stmt = $conn->prepare($location_name_query);
-                $location_name_stmt->bindValue(1, $location_filter, SQLITE3_INTEGER);
-                $location_name_result = $location_name_stmt->execute();
-                $location_name = $location_name_result->fetchArray(SQLITE3_ASSOC)['name'] ?? 'Unknown';
+                $location_name_stmt = $conn->prepare("SELECT name FROM locations WHERE id = ?");
+                $location_name_stmt->bind_param("i", $location_filter);
+                $location_name_result = $location_name_stmt->get_result();
+                $location_name = $location_name_result->fetch_assoc()['name'] ?? 'Unknown';
                 $active_filters[] = "Location: " . htmlspecialchars($location_name);
             }
             if (!empty($search_filter)) $active_filters[] = "Search: " . htmlspecialchars($search_filter);
@@ -627,15 +620,15 @@ include_once 'includes/header.php';
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .filter-group {
         min-width: auto;
     }
-    
+
     .search-group {
         min-width: auto;
     }
-    
+
     .filter-buttons {
         justify-content: center;
     }
@@ -728,34 +721,34 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-submit form when brand or size filters change
     const brandSelect = document.getElementById('brand');
     const sizeSelect = document.getElementById('size');
-    
+
     if (brandSelect) {
         brandSelect.addEventListener('change', function() {
             this.form.submit();
         });
     }
-    
+
     if (sizeSelect) {
         sizeSelect.addEventListener('change', function() {
             this.form.submit();
         });
     }
-    
+
     // Add visual feedback for active filters
     const filterGroups = document.querySelectorAll('.filter-group');
     filterGroups.forEach(group => {
         const select = group.querySelector('select');
         const input = group.querySelector('input');
-        
+
         if (select && select.value && select.value !== 'all' && select.value !== '') {
             group.classList.add('filter-active');
         }
-        
+
         if (input && input.value) {
             group.classList.add('filter-active');
         }
     });
-    
+
     // Clear all filters functionality
     const clearButton = document.querySelector('a[href="inventory.php"]');
     if (clearButton) {
@@ -764,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = 'inventory.php';
         });
     }
-    
+
     // Search input with debounce
     const searchInput = document.getElementById('search');
     if (searchInput) {

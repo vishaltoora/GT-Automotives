@@ -41,38 +41,9 @@ function safeInclude($file) {
     }
 }
 
-// Function to test database connection
-function testDatabaseConnection() {
-    try {
-        $db_path = __DIR__ . '/../database/gt_automotives.db';
-        
-        if (!file_exists($db_path)) {
-            throw new Exception("Database file not found at: $db_path");
-        }
-        
-        if (!is_readable($db_path)) {
-            throw new Exception("Database file not readable");
-        }
-        
-        $conn = new SQLite3($db_path);
-        $conn->enableExceptions(true);
-        
-        // Test a simple query
-        $result = $conn->query("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'");
-        if (!$result) {
-            throw new Exception("Database query failed");
-        }
-        
-        return $conn;
-    } catch (Exception $e) {
-        error_log("Database connection failed: " . $e->getMessage());
-        throw $e;
-    }
-}
-
 // Function to check required PHP extensions
 function checkRequiredExtensions() {
-    $required = ['sqlite3', 'gd', 'fileinfo'];
+    $required = ['mysqli', 'gd', 'fileinfo', 'zip'];
     $missing = [];
     
     foreach ($required as $ext) {
@@ -82,6 +53,35 @@ function checkRequiredExtensions() {
     }
     
     return $missing;
+}
+
+// Function to test database connection
+function testDatabaseConnection() {
+    try {
+        // Create a new connection for testing
+        $host = 'localhost';
+        $dbname = 'gt_automotives';
+        $username = 'gtadmin';
+        $password = 'Vishal@1234#';
+        
+        $test_conn = new mysqli($host, $username, $password, $dbname);
+        
+        if ($test_conn->connect_error) {
+            return "Connection failed: " . $test_conn->connect_error;
+        }
+        
+        $result = $test_conn->query("SHOW TABLES");
+        if ($result) {
+            $table_count = $result->num_rows;
+            $test_conn->close();
+            return "Connected ($table_count tables)";
+        } else {
+            $test_conn->close();
+            return "Query failed";
+        }
+    } catch (Exception $e) {
+        return "Connection failed: " . $e->getMessage();
+    }
 }
 
 // Function to create uploads directory if needed

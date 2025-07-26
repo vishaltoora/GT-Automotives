@@ -16,17 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Brand name is required';
     }
     if (empty($errors)) {
-        $stmt = $conn->prepare('INSERT INTO brands (name, description, website, logo_url) VALUES (?, ?, ?, ?)');
-        $stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $stmt->bindValue(2, $description, SQLITE3_TEXT);
-        $stmt->bindValue(3, $website, SQLITE3_TEXT);
-        $stmt->bindValue(4, $logo_url, SQLITE3_TEXT);
+        $stmt = $conn->prepare("INSERT INTO brands (name, description, website, logo_url) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $name, $description, $website, $logo_url);
         if ($stmt->execute()) {
             $_SESSION['success_message'] = 'Brand added successfully';
             header('Location: brands.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     if (!empty($errors)) {

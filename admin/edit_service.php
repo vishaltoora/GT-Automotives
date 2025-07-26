@@ -26,16 +26,15 @@ if ($service_id <= 0) {
 // Fetch service categories for dropdown
 $categories = [];
 $result = $conn->query('SELECT name, description FROM service_categories ORDER BY sort_order, name');
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $result->fetch_assoc()) {
     $categories[] = $row;
 }
 
 // Get service data
-$service_query = "SELECT * FROM services WHERE id = ?";
-$stmt = $conn->prepare($service_query);
-$stmt->bindValue(1, $service_id, SQLITE3_INTEGER);
-$service_result = $stmt->execute();
-$service = $service_result->fetchArray(SQLITE3_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM services WHERE id = ?");
+$stmt->bind_param("i", $service_id);
+$result = $stmt->get_result();
+$service = $result->fetch_assoc();
 
 if (!$service) {
     $_SESSION['error_message'] = 'Service not found';
@@ -74,16 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // If no errors, update the service
     if (empty($errors)) {
-        $query = "UPDATE services SET name = ?, description = ?, price = ?, category = ?, duration_minutes = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name);
-        $stmt->bindValue(2, $description);
-        $stmt->bindValue(3, $price);
-        $stmt->bindValue(4, $category);
-        $stmt->bindValue(5, $duration_minutes, SQLITE3_INTEGER);
-        $stmt->bindValue(6, $is_active, SQLITE3_INTEGER);
-        $stmt->bindValue(7, $service_id, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("UPDATE services SET name = ?, description = ?, price = ?, category = ?, duration_minutes = ?, is_active = ? WHERE id = ?");
+        $stmt->bind_param("ssdsii", $name, $description, $price, $category, $duration_minutes, $is_active, $service_id);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -91,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: services.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     

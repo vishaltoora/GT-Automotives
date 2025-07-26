@@ -11,21 +11,21 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit;
 }
 $brand_id = intval($_GET['id']);
-$stmt = $conn->prepare('SELECT * FROM brands WHERE id = ?');
-$stmt->bindValue(1, $brand_id, SQLITE3_INTEGER);
-$result = $stmt->execute();
-$brand = $result->fetchArray(SQLITE3_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM brands WHERE id = ?");
+$stmt->bind_param("i", $brand_id);
+$result = $stmt->get_result();
+$brand = $result->fetch_assoc();
 if (!$brand) {
     $_SESSION['error_message'] = 'Brand not found';
     header('Location: brands.php');
     exit;
 }
-$stmt = $conn->prepare('DELETE FROM brands WHERE id = ?');
-$stmt->bindValue(1, $brand_id, SQLITE3_INTEGER);
+$stmt = $conn->prepare("DELETE FROM brands WHERE id = ?");
+$stmt->bind_param("i", $brand_id);
 if ($stmt->execute()) {
     $_SESSION['success_message'] = 'Brand deleted successfully';
 } else {
-    $_SESSION['error_message'] = 'Error deleting brand: ' . $conn->lastErrorMsg();
+    $_SESSION['error_message'] = 'Error deleting brand: ' . $conn->error();
 }
 header('Location: brands.php');
 exit; 

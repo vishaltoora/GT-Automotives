@@ -24,7 +24,7 @@ $products_query = "SELECT t.id, t.name, t.size, t.price, t.stock_quantity, t.`co
 $products_result = $conn->query($products_query);
 
 $products = [];
-while ($row = $products_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $products_result->fetch_assoc()) {
     $products[] = $row;
 }
 
@@ -36,7 +36,7 @@ $services_query = "SELECT s.*, sc.name as category_name FROM services s
 $services_result = $conn->query($services_query);
 
 $services = [];
-while ($row = $services_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $services_result->fetch_assoc()) {
     $services[] = $row;
 }
 
@@ -78,9 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Check inventory availability for products
                 $stock_query = "SELECT stock_quantity, name FROM tires WHERE id = ?";
                 $stock_stmt = $conn->prepare($stock_query);
-                $stock_stmt->bindValue(1, $tire_id, SQLITE3_INTEGER);
-                $stock_result = $stock_stmt->execute();
-                $tire_info = $stock_result->fetchArray(SQLITE3_ASSOC);
+                $stock_stmt->bind_param("i", $tire_id);
+                $stock_stmt->execute();
+                $stock_result = $stock_stmt->get_result();
+                $tire_info = $stock_result->fetch_assoc();
+                $stock_stmt->close();
                 
                 if (!$tire_info) {
                     $inventory_errors[] = "Product not found.";
@@ -105,9 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Check if service exists and is active
                 $service_query = "SELECT name FROM services WHERE id = ? AND is_active = 1";
                 $service_stmt = $conn->prepare($service_query);
-                $service_stmt->bindValue(1, $service_id, SQLITE3_INTEGER);
-                $service_result = $service_stmt->execute();
-                $service_info = $service_result->fetchArray(SQLITE3_ASSOC);
+                $service_stmt->bind_param("i", $service_id);
+                $service_stmt->execute();
+                $service_result = $service_stmt->get_result();
+                $service_info = $service_result->fetch_assoc();
+                $service_stmt->close();
                 
                 if (!$service_info) {
                     $inventory_errors[] = "Service not found or inactive.";
@@ -227,8 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $update_stock = $conn->prepare("
                         UPDATE tires SET stock_quantity = stock_quantity - ? WHERE id = ?
                     ");
-                    $update_stock->bindValue(1, $item['quantity'], SQLITE3_INTEGER);
-                    $update_stock->bindValue(2, $item['tire_id'], SQLITE3_INTEGER);
+                    $update_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
                     $update_stock->execute();
                 }
             }
@@ -253,25 +256,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
-            $sale_stmt->bindValue(1, $invoice_number, SQLITE3_TEXT);
-            $sale_stmt->bindValue(2, $_POST['customer_name'], SQLITE3_TEXT);
-            $sale_stmt->bindValue(3, $_POST['customer_business_name'] ?? '', SQLITE3_TEXT);
-            $sale_stmt->bindValue(4, $_POST['customer_email'] ?? '', SQLITE3_TEXT);
-            $sale_stmt->bindValue(5, $_POST['customer_phone'] ?? '', SQLITE3_TEXT);
-            $sale_stmt->bindValue(6, $_POST['customer_address'] ?? '', SQLITE3_TEXT);
-            $sale_stmt->bindValue(7, $subtotal, SQLITE3_FLOAT);
-            $sale_stmt->bindValue(8, $gst_rate, SQLITE3_FLOAT);
-            $sale_stmt->bindValue(9, $gst_amount, SQLITE3_FLOAT);
-            $sale_stmt->bindValue(10, $pst_rate, SQLITE3_FLOAT);
-            $sale_stmt->bindValue(11, $pst_amount, SQLITE3_FLOAT);
-            $sale_stmt->bindValue(12, $total_amount, SQLITE3_FLOAT);
-            $sale_stmt->bindValue(13, $_POST['payment_method'] ?? 'cash_with_invoice', SQLITE3_TEXT);
-            $sale_stmt->bindValue(14, $_POST['payment_status'] ?? 'pending', SQLITE3_TEXT);
-            $sale_stmt->bindValue(15, $_POST['notes'] ?? '', SQLITE3_TEXT);
-            $sale_stmt->bindValue(16, $user_id, SQLITE3_INTEGER);
+            $sale_stmt->bind_param("ssssssddddsssi", $invoice_number, $_POST['customer_name'], $_POST['customer_business_name'] ?? '', $_POST['customer_email'] ?? '', $_POST['customer_phone'] ?? '', $_POST['customer_address'] ?? '', $subtotal, $gst_rate, $gst_amount, $pst_rate, $pst_amount, $total_amount, $_POST['payment_method'] ?? 'cash_with_invoice', $_POST['payment_status'] ?? 'pending', $_POST['notes'] ?? '', $user_id);
             
             $sale_stmt->execute();
-            $sale_id = $conn->lastInsertRowID();
+            $sale_id = $conn->insert_id();
             
             // Insert sale items
             $item_stmt = $conn->prepare("
@@ -280,12 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             
             foreach ($items_data as $item) {
-                $item_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
-                $item_stmt->bindValue(2, $item['tire_id'], SQLITE3_INTEGER);
-                $item_stmt->bindValue(3, $item['service_id'], SQLITE3_INTEGER);
-                $item_stmt->bindValue(4, $item['quantity'], SQLITE3_INTEGER);
-                $item_stmt->bindValue(5, $item['unit_price'], SQLITE3_FLOAT);
-                $item_stmt->bindValue(6, $item['total_price'], SQLITE3_FLOAT);
+                $item_stmt->bind_param("iiiddd", $sale_id, $item['tire_id'], $item['service_id'], $item['quantity'], $item['unit_price'], $item['total_price']);
                 $item_stmt->execute();
                 
                 // Update stock quantity for products only
@@ -293,8 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $update_stock = $conn->prepare("
                         UPDATE tires SET stock_quantity = stock_quantity - ? WHERE id = ?
                     ");
-                    $update_stock->bindValue(1, $item['quantity'], SQLITE3_INTEGER);
-                    $update_stock->bindValue(2, $item['tire_id'], SQLITE3_INTEGER);
+                    $update_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
                     $update_stock->execute();
                 }
             }

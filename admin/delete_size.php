@@ -21,11 +21,10 @@ if ($size_id <= 0) {
 }
 
 // Get size data
-$size_query = "SELECT * FROM sizes WHERE id = ?";
-$size_stmt = $conn->prepare($size_query);
-$size_stmt->bindValue(1, $size_id, SQLITE3_INTEGER);
-$size_result = $size_stmt->execute();
-$size = $size_result->fetchArray(SQLITE3_ASSOC);
+$size_stmt = $conn->prepare("SELECT * FROM sizes WHERE id = ?");
+$size_stmt->bind_param("i", $size_id);
+$size_result = $size_stmt->get_result();
+$size = $size_result->fetch_assoc();
 
 if (!$size) {
     $_SESSION['error_message'] = 'Size not found';
@@ -34,11 +33,10 @@ if (!$size) {
 }
 
 // Check if size is being used by any products
-$usage_query = "SELECT COUNT(*) as count FROM tires WHERE size = ?";
-$usage_stmt = $conn->prepare($usage_query);
-$usage_stmt->bindValue(1, $size['name'], SQLITE3_TEXT);
-$usage_result = $usage_stmt->execute();
-$usage_count = $usage_result->fetchArray(SQLITE3_ASSOC)['count'];
+$usage_stmt = $conn->prepare("SELECT COUNT(*) as count FROM tires WHERE size = ?");
+$usage_stmt->bind_param("s", $size['name']);
+$usage_result = $usage_stmt->get_result();
+$usage_count = $usage_result->fetch_assoc()['count'];
 
 if ($usage_count > 0) {
     $_SESSION['error_message'] = "Cannot delete size '{$size['name']}' because it is being used by $usage_count product(s). Please update or remove those products first.";
@@ -47,14 +45,13 @@ if ($usage_count > 0) {
 }
 
 // Delete the size
-$delete_query = "DELETE FROM sizes WHERE id = ?";
-$delete_stmt = $conn->prepare($delete_query);
-$delete_stmt->bindValue(1, $size_id, SQLITE3_INTEGER);
+$delete_stmt = $conn->prepare("DELETE FROM sizes WHERE id = ?");
+$delete_stmt->bind_param("i", $size_id);
 
 if ($delete_stmt->execute()) {
     $_SESSION['success_message'] = "Size '{$size['name']}' deleted successfully";
 } else {
-    $_SESSION['error_message'] = 'Database error: ' . $conn->lastErrorMsg();
+    $_SESSION['error_message'] = 'Database error: ' . $conn->error();
 }
 
 header('Location: sizes.php');

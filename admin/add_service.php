@@ -17,7 +17,7 @@ $page_title = 'Add Service';
 // Fetch service categories for dropdown
 $categories = [];
 $result = $conn->query('SELECT name, description FROM service_categories ORDER BY sort_order, name');
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $result->fetch_assoc()) {
     $categories[] = $row;
 }
 
@@ -52,16 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // If no errors, insert the service
     if (empty($errors)) {
-        $query = "INSERT INTO services (name, description, price, category, duration_minutes, is_active) 
-                 VALUES (?, ?, ?, ?, ?, ?)";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name);
-        $stmt->bindValue(2, $description);
-        $stmt->bindValue(3, $price);
-        $stmt->bindValue(4, $category);
-        $stmt->bindValue(5, $duration_minutes, SQLITE3_INTEGER);
-        $stmt->bindValue(6, $is_active, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("INSERT INTO services (name, description, price, category, duration_minutes, is_active) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssdsii", $name, $description, $price, $category, $duration_minutes, $is_active);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -69,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: services.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     

@@ -21,11 +21,10 @@ if ($service_id <= 0) {
 }
 
 // Check if service exists
-$service_query = "SELECT name FROM services WHERE id = ?";
-$stmt = $conn->prepare($service_query);
-$stmt->bindValue(1, $service_id, SQLITE3_INTEGER);
-$service_result = $stmt->execute();
-$service = $service_result->fetchArray(SQLITE3_ASSOC);
+    $stmt = $conn->prepare("SELECT * FROM services WHERE id = ?");
+    $stmt->bind_param("i", $service_id);
+    $result = $stmt->get_result();
+    $service = $result->fetch_assoc();
 
 if (!$service) {
     $_SESSION['error_message'] = 'Service not found';
@@ -36,9 +35,9 @@ if (!$service) {
 // Check if service is used in any sales
 $sales_query = "SELECT COUNT(*) as count FROM sale_items WHERE service_id = ?";
 $stmt = $conn->prepare($sales_query);
-$stmt->bindValue(1, $service_id, SQLITE3_INTEGER);
-$sales_result = $stmt->execute();
-$sales_count = $sales_result->fetchArray(SQLITE3_ASSOC)['count'];
+$stmt->bind_param("i", $service_id);
+$sales_result = $stmt->get_result();
+$sales_count = $sales_result->fetch_assoc()['count'];
 
 if ($sales_count > 0) {
     $_SESSION['error_message'] = 'Cannot delete service that has been used in sales. Consider deactivating it instead.';
@@ -47,14 +46,13 @@ if ($sales_count > 0) {
 }
 
 // Delete the service
-$delete_query = "DELETE FROM services WHERE id = ?";
-$stmt = $conn->prepare($delete_query);
-$stmt->bindValue(1, $service_id, SQLITE3_INTEGER);
+    $stmt = $conn->prepare("DELETE FROM services WHERE id = ?");
+    $stmt->bind_param("i", $service_id);
 
 if ($stmt->execute()) {
     $_SESSION['success_message'] = 'Service "' . htmlspecialchars($service['name']) . '" deleted successfully';
 } else {
-    $_SESSION['error_message'] = 'Error deleting service: ' . $conn->lastErrorMsg();
+    $_SESSION['error_message'] = 'Error deleting service: ' . $conn->error;
 }
 
 header('Location: services.php');

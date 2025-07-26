@@ -21,11 +21,10 @@ if ($location_id <= 0) {
 }
 
 // Check if location exists
-$location_query = "SELECT * FROM locations WHERE id = ?";
-$location_stmt = $conn->prepare($location_query);
-$location_stmt->bindValue(1, $location_id, SQLITE3_INTEGER);
-$location_result = $location_stmt->execute();
-$location = $location_result->fetchArray(SQLITE3_ASSOC);
+    $stmt = $conn->prepare("SELECT * FROM locations WHERE id = ?");
+    $stmt->bind_param("i", $location_id);
+    $result = $stmt->get_result();
+    $location = $result->fetch_assoc();
 
 if (!$location) {
     $_SESSION['error_message'] = 'Location not found';
@@ -36,15 +35,15 @@ if (!$location) {
 // Check if location is being used by any products or services
 $tires_count_query = "SELECT COUNT(*) as count FROM tires WHERE location_id = ?";
 $tires_stmt = $conn->prepare($tires_count_query);
-$tires_stmt->bindValue(1, $location_id, SQLITE3_INTEGER);
-$tires_result = $tires_stmt->execute();
-$tires_count = $tires_result->fetchArray(SQLITE3_ASSOC)['count'];
+$tires_stmt->bind_param("i", $location_id);
+$tires_result = $tires_stmt->get_result();
+$tires_count = $tires_result->fetch_assoc()['count'];
 
 $services_count_query = "SELECT COUNT(*) as count FROM services WHERE location_id = ?";
 $services_stmt = $conn->prepare($services_count_query);
-$services_stmt->bindValue(1, $location_id, SQLITE3_INTEGER);
-$services_result = $services_stmt->execute();
-$services_count = $services_result->fetchArray(SQLITE3_ASSOC)['count'];
+$services_stmt->bind_param("i", $location_id);
+$services_result = $services_stmt->get_result();
+$services_count = $services_result->fetch_assoc()['count'];
 
 $total_items = $tires_count + $services_count;
 
@@ -55,14 +54,13 @@ if ($total_items > 0) {
 }
 
 // Delete the location
-$delete_query = "DELETE FROM locations WHERE id = ?";
-$delete_stmt = $conn->prepare($delete_query);
-$delete_stmt->bindValue(1, $location_id, SQLITE3_INTEGER);
+    $stmt = $conn->prepare("DELETE FROM locations WHERE id = ?");
+    $stmt->bind_param("i", $location_id);
 
-if ($delete_stmt->execute()) {
-    $_SESSION['success_message'] = "Location '{$location['name']}' deleted successfully";
+if ($stmt->execute()) {
+    $_SESSION['success_message'] = 'Location "' . htmlspecialchars($location['name']) . '" deleted successfully';
 } else {
-    $_SESSION['error_message'] = 'Error deleting location: ' . $conn->lastErrorMsg();
+    $_SESSION['error_message'] = 'Error deleting location: ' . $conn->error;
 }
 
 header('Location: locations.php');

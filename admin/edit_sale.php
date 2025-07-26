@@ -20,11 +20,10 @@ if (!$sale_id) {
 }
 
 // Get sale details
-$sale_query = "SELECT * FROM sales WHERE id = ?";
-$sale_stmt = $conn->prepare($sale_query);
-$sale_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
-$sale_result = $sale_stmt->execute();
-$sale = $sale_result->fetchArray(SQLITE3_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM sales WHERE id = ?");
+$stmt->bind_param("i", $sale_id);
+$result = $stmt->get_result();
+$sale = $result->fetch_assoc();
 
 if (!$sale) {
     header('Location: sales.php');
@@ -79,17 +78,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Get sale items to restore inventory
             $restore_items_query = "SELECT tire_id, quantity FROM sale_items WHERE sale_id = ?";
             $restore_stmt = $conn->prepare($restore_items_query);
-            $restore_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
-            $restore_result = $restore_stmt->execute();
+            $restore_stmt->bind_param("i", $sale_id);
+            $restore_stmt->execute();
+            $restore_result = $restore_stmt->get_result();
             
-            while ($item = $restore_result->fetchArray(SQLITE3_ASSOC)) {
+            while ($item = $restore_result->fetch_assoc()) {
                 $restore_stock = $conn->prepare("
                     UPDATE tires SET stock_quantity = stock_quantity + ? WHERE id = ?
                 ");
-                $restore_stock->bindValue(1, $item['quantity'], SQLITE3_INTEGER);
-                $restore_stock->bindValue(2, $item['tire_id'], SQLITE3_INTEGER);
+                $restore_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
                 $restore_stock->execute();
+                $restore_stock->close();
             }
+            $restore_stmt->close();
         }
         
         // If sale is being reactivated from cancelled, deduct inventory again
@@ -97,17 +98,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Get sale items to deduct inventory
             $deduct_items_query = "SELECT tire_id, quantity FROM sale_items WHERE sale_id = ?";
             $deduct_stmt = $conn->prepare($deduct_items_query);
-            $deduct_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
-            $deduct_result = $deduct_stmt->execute();
+            $deduct_stmt->bind_param("i", $sale_id);
+            $deduct_stmt->execute();
+            $deduct_result = $deduct_stmt->get_result();
             
-            while ($item = $deduct_result->fetchArray(SQLITE3_ASSOC)) {
+            while ($item = $deduct_result->fetch_assoc()) {
                 $deduct_stock = $conn->prepare("
                     UPDATE tires SET stock_quantity = stock_quantity - ? WHERE id = ?
                 ");
-                $deduct_stock->bindValue(1, $item['quantity'], SQLITE3_INTEGER);
-                $deduct_stock->bindValue(2, $item['tire_id'], SQLITE3_INTEGER);
+                $deduct_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
                 $deduct_stock->execute();
+                $deduct_stock->close();
             }
+            $deduct_stmt->close();
         }
         
         // Update sale record
@@ -134,21 +137,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Format the date and time for database
         $created_at = $_POST['created_date'] . ' ' . $_POST['created_time'] . ':00';
         
-        $update_stmt->bindValue(1, $_POST['customer_name'], SQLITE3_TEXT);
-        $update_stmt->bindValue(2, $_POST['customer_business_name'] ?? '', SQLITE3_TEXT);
-        $update_stmt->bindValue(3, $_POST['customer_email'] ?? '', SQLITE3_TEXT);
-        $update_stmt->bindValue(4, $_POST['customer_phone'] ?? '', SQLITE3_TEXT);
-        $update_stmt->bindValue(5, $_POST['customer_address'] ?? '', SQLITE3_TEXT);
-        $update_stmt->bindValue(6, $gst_rate, SQLITE3_FLOAT);
-        $update_stmt->bindValue(7, $gst_amount, SQLITE3_FLOAT);
-        $update_stmt->bindValue(8, $pst_rate, SQLITE3_FLOAT);
-        $update_stmt->bindValue(9, $pst_amount, SQLITE3_FLOAT);
-        $update_stmt->bindValue(10, $total_amount, SQLITE3_FLOAT);
-        $update_stmt->bindValue(11, $_POST['payment_method'] ?? 'cash_with_invoice', SQLITE3_TEXT);
-        $update_stmt->bindValue(12, $_POST['payment_status'] ?? 'pending', SQLITE3_TEXT);
-        $update_stmt->bindValue(13, $_POST['notes'] ?? '', SQLITE3_TEXT);
-        $update_stmt->bindValue(14, $created_at, SQLITE3_TEXT);
-        $update_stmt->bindValue(15, $sale_id, SQLITE3_INTEGER);
+        $update_stmt->bind_param("sssssssssssss",
+            $_POST['customer_name'],
+            $_POST['customer_business_name'] ?? '',
+            $_POST['customer_email'] ?? '',
+            $_POST['customer_phone'] ?? '',
+            $_POST['customer_address'] ?? '',
+            $gst_rate,
+            $gst_amount,
+            $pst_rate,
+            $pst_amount,
+            $total_amount,
+            $_POST['payment_method'] ?? 'cash_with_invoice',
+            $_POST['payment_status'] ?? 'pending',
+            $_POST['notes'] ?? '',
+            $created_at,
+            $sale_id
+        );
         
         $update_stmt->execute();
         

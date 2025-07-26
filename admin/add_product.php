@@ -17,21 +17,21 @@ $page_title = 'Add Product';
 // Fetch brands for dropdown
 $brands = [];
 $result = $conn->query('SELECT id, name FROM brands ORDER BY name ASC');
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $result->fetch_assoc()) {
     $brands[] = $row;
 }
 
 // Fetch locations for dropdown
 $locations = [];
 $locations_result = $conn->query('SELECT id, name FROM locations ORDER BY name ASC');
-while ($row = $locations_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $locations_result->fetch_assoc()) {
     $locations[] = $row;
 }
 
 // Fetch sizes for dropdown
 $sizes = [];
 $sizes_result = $conn->query('SELECT id, name, description FROM sizes WHERE is_active = 1 ORDER BY sort_order ASC, name ASC');
-while ($row = $sizes_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $sizes_result->fetch_assoc()) {
     $sizes[] = $row;
 }
 
@@ -128,27 +128,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $brand_id, SQLITE3_INTEGER);
-        $stmt->bindValue(2, $product_type, SQLITE3_TEXT); // Changed from $name to $product_type
-        $stmt->bindValue(3, $size, SQLITE3_TEXT);
-        $stmt->bindValue(4, $price, SQLITE3_FLOAT);
-        $stmt->bindValue(5, $description, SQLITE3_TEXT);
-        $stmt->bindValue(6, $image_url, SQLITE3_TEXT);
-        $stmt->bindValue(7, $stock_quantity, SQLITE3_INTEGER);
-        $stmt->bindValue(8, $condition, SQLITE3_TEXT);
-        $stmt->bindValue(9, $location_id, SQLITE3_INTEGER);
+        $stmt->bind_param("issdsisi", $brand_id, $product_type, $size, $price, $description, $image_url, $stock_quantity, $condition, $location_id);
         
         if ($stmt->execute()) {
-            $tire_id = $conn->lastInsertRowID();
+            $tire_id = $conn->insert_id;
             
             // Insert photos for used tires
             if ($condition === 'used' && !empty($uploaded_photos)) {
                 foreach ($uploaded_photos as $index => $photo_url) {
                     $photo_query = "INSERT INTO used_tire_photos (tire_id, photo_url, photo_order) VALUES (?, ?, ?)";
                     $photo_stmt = $conn->prepare($photo_query);
-                    $photo_stmt->bindValue(1, $tire_id, SQLITE3_INTEGER);
-                    $photo_stmt->bindValue(2, $photo_url, SQLITE3_TEXT);
-                    $photo_stmt->bindValue(3, $index, SQLITE3_INTEGER);
+                    $photo_stmt->bind_param("isi", $tire_id, $photo_url, $index);
                     $photo_stmt->execute();
                 }
             }
@@ -158,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: products.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error;
         }
     }
     

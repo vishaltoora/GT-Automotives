@@ -24,11 +24,10 @@ if ($size_id <= 0) {
 }
 
 // Get size data
-$size_query = "SELECT * FROM sizes WHERE id = ?";
-$size_stmt = $conn->prepare($size_query);
-$size_stmt->bindValue(1, $size_id, SQLITE3_INTEGER);
-$size_result = $size_stmt->execute();
-$size = $size_result->fetchArray(SQLITE3_ASSOC);
+$size_stmt = $conn->prepare("SELECT * FROM sizes WHERE id = ?");
+$size_stmt->bind_param("i", $size_id);
+$size_result = $size_stmt->get_result();
+$size = $size_result->fetch_assoc();
 
 if (!$size) {
     $_SESSION['error_message'] = 'Size not found';
@@ -65,27 +64,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Check if size name already exists (excluding current size)
     if (empty($errors)) {
-        $check_query = "SELECT COUNT(*) as count FROM sizes WHERE name = ? AND id != ?";
-        $check_stmt = $conn->prepare($check_query);
-        $check_stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $check_stmt->bindValue(2, $size_id, SQLITE3_INTEGER);
-        $check_result = $check_stmt->execute();
-        $count = $check_result->fetchArray(SQLITE3_ASSOC)['count'];
+        $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM sizes WHERE name = ? AND id != ?");
+        $check_stmt->bind_param("si", $name, $size_id);
+        $check_result = $check_stmt->get_result();
+        $existing_count = $check_result->fetch_assoc()['count'];
         
-        if ($count > 0) {
+        if ($existing_count > 0) {
             $errors[] = 'A size with this name already exists';
         }
     }
     
     if (empty($errors)) {
-        $query = "UPDATE sizes SET name = ?, description = ?, is_active = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $stmt->bindValue(2, $description, SQLITE3_TEXT);
-        $stmt->bindValue(3, $is_active, SQLITE3_INTEGER);
-        $stmt->bindValue(4, $sort_order, SQLITE3_INTEGER);
-        $stmt->bindValue(5, $size_id, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("UPDATE sizes SET name = ?, description = ?, is_active = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->bind_param("ssiis", $name, $description, $is_active, $sort_order, $size_id);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -93,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: sizes.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     

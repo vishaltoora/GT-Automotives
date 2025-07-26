@@ -36,9 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if category name already exists
     $check_query = "SELECT COUNT(*) as count FROM service_categories WHERE name = ?";
     $stmt = $conn->prepare($check_query);
-    $stmt->bindValue(1, $name);
-    $result = $stmt->execute();
-    $count = $result->fetchArray(SQLITE3_ASSOC)['count'];
+    $stmt->bind_param("s", $name);
+    $result = $stmt->get_result();
+    $count = $result->fetch_assoc()['count'];
     
     if ($count > 0) {
         $errors[] = 'Category name already exists';
@@ -46,13 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // If no errors, insert the category
     if (empty($errors)) {
-        $query = "INSERT INTO service_categories (name, description, icon, sort_order) VALUES (?, ?, ?, ?)";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name);
-        $stmt->bindValue(2, $description);
-        $stmt->bindValue(3, $icon);
-        $stmt->bindValue(4, $sort_order, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("INSERT INTO service_categories (name, description, icon, sort_order) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("sssi", $name, $description, $icon, $sort_order);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -60,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: service_categories.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error;
         }
     }
     

@@ -38,13 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (empty($errors)) {
-        $query = "INSERT INTO locations (name, description, address) 
-                 VALUES (?, ?, ?)";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $stmt->bindValue(2, $description, SQLITE3_TEXT);
-        $stmt->bindValue(3, $address, SQLITE3_TEXT);
+        $stmt = $conn->prepare("INSERT INTO locations (name, description, address) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $name, $description, $address);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -52,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: locations.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     

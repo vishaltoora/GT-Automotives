@@ -24,11 +24,10 @@ if ($location_id <= 0) {
 }
 
 // Get location data
-$location_query = "SELECT * FROM locations WHERE id = ?";
-$location_stmt = $conn->prepare($location_query);
-$location_stmt->bindValue(1, $location_id, SQLITE3_INTEGER);
-$location_result = $location_stmt->execute();
-$location = $location_result->fetchArray(SQLITE3_ASSOC);
+$location_stmt = $conn->prepare("SELECT * FROM locations WHERE id = ?");
+$location_stmt->bind_param("i", $location_id);
+$location_result = $location_stmt->get_result();
+$location = $location_result->fetch_assoc();
 
 if (!$location) {
     $_SESSION['error_message'] = 'Location not found';
@@ -60,13 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (empty($errors)) {
-        $query = "UPDATE locations SET name = ?, description = ?, address = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $stmt->bindValue(2, $description, SQLITE3_TEXT);
-        $stmt->bindValue(3, $address, SQLITE3_TEXT);
-        $stmt->bindValue(4, $location_id, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("UPDATE locations SET name = ?, description = ?, address = ? WHERE id = ?");
+        $stmt->bind_param("sssi", $name, $description, $address, $location_id);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -74,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: locations.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     

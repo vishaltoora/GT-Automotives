@@ -42,11 +42,11 @@ if (file_exists('css/style.css')) {
 // Test 6: Check if we can read from database
 echo "<h2>Test 6: Database Read Test</h2>";
 try {
-    $result = $conn->query("SELECT name FROM sqlite_master WHERE type='table'");
+    $result = $conn->query("SHOW TABLES");
     if ($result) {
         echo "<p>✅ Database tables found:</p><ul>";
-        while ($row = $result->fetchArray()) {
-            echo "<li>" . htmlspecialchars($row['name']) . "</li>";
+        while ($row = $result->fetch_assoc()) {
+            echo "<li>" . htmlspecialchars($row['Tables_in_gt_automotives']) . "</li>";
         }
         echo "</ul>";
     } else {

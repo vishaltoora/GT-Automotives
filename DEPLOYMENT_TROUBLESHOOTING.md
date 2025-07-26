@@ -60,7 +60,7 @@ sudo chmod 755 uploads/compressed/
 ```bash
 # Install required PHP extensions
 sudo apt-get update
-sudo apt-get install php8.2-gd php8.2-sqlite3 php8.2-fileinfo php8.2-zip
+sudo apt-get install php8.2-gd php8.2-mysqli php8.2-fileinfo php8.2-zip
 
 # Restart web server
 sudo systemctl restart apache2
@@ -186,7 +186,7 @@ tail -f /var/www/html/error.log
 
 ### Shared Hosting
 
-- Check if SQLite is enabled
+- Check if MySQL is enabled
 - Verify PHP version compatibility
 - Ensure file upload limits are sufficient
 
@@ -201,7 +201,7 @@ tail -f /var/www/html/error.log
 ```bash
 # Check PHP version and extensions
 php -v
-php -m | grep -E "(sqlite|gd|fileinfo|zip)"
+php -m | grep -E "(mysqli|gd|fileinfo|zip)"
 
 # Check file permissions
 ls -la database/
@@ -237,7 +237,6 @@ If you're still experiencing issues after following this guide:
 # Fix permissions
 sudo chown -R www-data:www-data /var/www/html/
 sudo chmod -R 755 /var/www/html/
-sudo chmod 644 /var/www/html/database/gt_automotives.db
 
 # Create uploads directory
 sudo mkdir -p /var/www/html/uploads/compressed

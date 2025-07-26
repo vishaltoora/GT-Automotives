@@ -21,26 +21,25 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $product_id = intval($_GET['id']);
 
 // Check if product exists
-$query = "SELECT * FROM tires WHERE id = ? LIMIT 1";
-$stmt = $conn->prepare($query);
-$stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
-$result = $stmt->execute();
+$stmt = $conn->prepare("SELECT * FROM tires WHERE id = ?");
+$stmt->bind_param("i", $product_id);
+$result = $stmt->get_result();
+$product = $result->fetch_assoc();
 
-if ($result->numColumns() === 0) {
+if ($result->num_rows === 0) {
     $_SESSION['error_message'] = 'Product not found';
     header('Location: products.php');
     exit;
 }
 
 // Delete the product (cascade will handle related records)
-$delete_query = "DELETE FROM tires WHERE id = ?";
-$stmt = $conn->prepare($delete_query);
-$stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
+$stmt = $conn->prepare("DELETE FROM tires WHERE id = ?");
+$stmt->bind_param("i", $product_id);
 
 if ($stmt->execute()) {
     $_SESSION['success_message'] = 'Product deleted successfully';
 } else {
-    $_SESSION['error_message'] = 'Error deleting product: ' . $conn->lastErrorMsg();
+    $_SESSION['error_message'] = 'Error deleting product: ' . $conn->error();
 }
 
 header('Location: products.php');

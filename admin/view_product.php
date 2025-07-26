@@ -24,28 +24,26 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $product_id = intval($_GET['id']);
 
 // Get product data with brand name
-$query = "SELECT t.*, b.name as brand_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id WHERE t.id = ? LIMIT 1";
-$stmt = $conn->prepare($query);
-$stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
-$result = $stmt->execute();
+$stmt = $conn->prepare("SELECT * FROM tires WHERE id = ?");
+$stmt->bind_param("i", $product_id);
+$result = $stmt->get_result();
 
-if ($result->numColumns() === 0) {
+if ($result->num_rows === 0) {
     $_SESSION['error_message'] = 'Product not found';
     header('Location: products.php');
     exit;
 }
 
-$product = $result->fetchArray(SQLITE3_ASSOC);
+$product = $result->fetch_assoc();
 
 // Get photos for used tires
 $photos = [];
 if ($product['condition'] === 'used') {
-    $photos_query = "SELECT * FROM used_tire_photos WHERE tire_id = ? ORDER BY photo_order ASC";
-    $photos_stmt = $conn->prepare($photos_query);
-    $photos_stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
-    $photos_result = $photos_stmt->execute();
+    $photos_stmt = $conn->prepare("SELECT * FROM used_tire_photos WHERE tire_id = ? ORDER BY photo_order");
+    $photos_stmt->bind_param("i", $product_id);
+    $photos_result = $photos_stmt->get_result();
     
-    while ($photo = $photos_result->fetchArray(SQLITE3_ASSOC)) {
+    while ($photo = $photos_result->fetch_assoc()) {
         $photos[] = $photo;
     }
 }
