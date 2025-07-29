@@ -25,47 +25,69 @@ $product_id = intval($_GET['id']);
 
 // Fetch brands for dropdown
 $brands = [];
-$result = $conn->query('SELECT id, name FROM brands ORDER BY name ASC');
-while ($row = $result->fetch_assoc()) {
-    $brands[] = $row;
+$brands_result = $conn->query('SELECT id, name FROM brands ORDER BY name ASC');
+if ($brands_result) {
+    while ($row = $brands_result->fetch_assoc()) {
+        $brands[] = $row;
+    }
+    $brands_result->close();
 }
 
 // Fetch locations for dropdown
 $locations = [];
 $locations_result = $conn->query('SELECT id, name FROM locations ORDER BY name ASC');
-while ($row = $locations_result->fetch_assoc()) {
-    $locations[] = $row;
+if ($locations_result) {
+    while ($row = $locations_result->fetch_assoc()) {
+        $locations[] = $row;
+    }
+    $locations_result->close();
 }
 
 // Fetch sizes for dropdown
 $sizes = [];
 $sizes_result = $conn->query('SELECT id, name, description FROM sizes WHERE is_active = 1 ORDER BY sort_order ASC, name ASC');
-while ($row = $sizes_result->fetch_assoc()) {
-    $sizes[] = $row;
+if ($sizes_result) {
+    while ($row = $sizes_result->fetch_assoc()) {
+        $sizes[] = $row;
+    }
+    $sizes_result->close();
 }
 
 // Get product data
-$stmt = $conn->prepare("SELECT * FROM tires WHERE id = ?");
-$stmt->bind_param("i", $product_id);
-$result = $stmt->get_result();
+$product_stmt = $conn->prepare("SELECT * FROM tires WHERE id = ?");
+if (!$product_stmt) {
+    $_SESSION['error_message'] = 'Database error: ' . $conn->error;
+    header('Location: products.php');
+    exit;
+}
 
-if ($result->num_rows === 0) {
+$product_stmt->bind_param("i", $product_id);
+$product_stmt->execute();
+$product_result = $product_stmt->get_result();
+
+if ($product_result->num_rows === 0) {
+    $product_stmt->close();
     $_SESSION['error_message'] = 'Product not found';
     header('Location: products.php');
     exit;
 }
 
-$product = $result->fetch_assoc();
+$product = $product_result->fetch_assoc();
+$product_stmt->close();
 
 // Get existing photos for used tires
 $existing_photos = [];
 if ($product['condition'] === 'used') {
     $photos_stmt = $conn->prepare("SELECT * FROM used_tire_photos WHERE tire_id = ?");
-    $photos_stmt->bind_param("i", $product_id);
-    $photos_result = $photos_stmt->get_result();
-    
-    while ($photo = $photos_result->fetch_assoc()) {
-        $existing_photos[] = $photo;
+    if ($photos_stmt) {
+        $photos_stmt->bind_param("i", $product_id);
+        $photos_stmt->execute();
+        $photos_result = $photos_stmt->get_result();
+        
+        while ($photo = $photos_result->fetch_assoc()) {
+            $existing_photos[] = $photo;
+        }
+        $photos_stmt->close();
     }
 }
 
@@ -149,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Move uploaded file
                 if (move_uploaded_file($tmp_name, $upload_path)) {
-                    $uploaded_photos[] = 'images/used_tires/photos/' . $unique_filename;
+                    $uploaded_photos[] = $unique_filename;
                 } else {
                     $errors[] = "Failed to upload file '$file_name'";
                 }
@@ -157,44 +179,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // Handle photo deletions
-    $photos_to_delete = $_POST['delete_photos'] ?? [];
-    
-    // If no errors, update the product
     if (empty($errors)) {
-        $stmt = $conn->prepare("UPDATE tires SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, condition = ?, location_id = ? WHERE id = ?");
-        $stmt->bind_param("issdsisi", $brand_id, $product_type, $size, $price, $description, $stock_quantity, $condition, $location_id, $product_id);
+        // Start transaction
+        $conn->begin_transaction();
         
-        if ($stmt->execute()) {
-            // Handle photo management for used tires
+        try {
+            // Update tire information
+            $update_stmt = $conn->prepare("UPDATE tires SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, `condition` = ?, location_id = ? WHERE id = ?");
+            if (!$update_stmt) {
+                throw new Exception('Database error: ' . $conn->error);
+            }
+            
+            $update_stmt->bind_param("issdsisii", $brand_id, $product_type, $size, $price, $description, $stock_quantity, $condition, $location_id, $product_id);
+            
+            if (!$update_stmt->execute()) {
+                throw new Exception('Failed to update product: ' . $update_stmt->error);
+            }
+            $update_stmt->close();
+            
+            // Handle photos for used tires
             if ($condition === 'used') {
-                // Delete photos that were marked for deletion
-                foreach ($photos_to_delete as $photo_id) {
-                    $delete_stmt = $conn->prepare("DELETE FROM used_tire_photos WHERE id = ? AND tire_id = ?");
-                    $delete_stmt->bind_param("ii", $photo_id, $product_id);
-                    $delete_stmt->execute();
+                // Delete existing photos if any
+                $delete_photos_stmt = $conn->prepare("DELETE FROM used_tire_photos WHERE tire_id = ?");
+                if ($delete_photos_stmt) {
+                    $delete_photos_stmt->bind_param("i", $product_id);
+                    $delete_photos_stmt->execute();
+                    $delete_photos_stmt->close();
                 }
                 
                 // Insert new photos
-                foreach ($uploaded_photos as $index => $photo_url) {
-                    $photo_stmt = $conn->prepare("INSERT INTO used_tire_photos (tire_id, photo_url, photo_order) VALUES (?, ?, ?)");
-                    $photo_stmt->bind_param("isi", $product_id, $photo_url, $index);
-                    $photo_stmt->execute();
+                if (!empty($uploaded_photos)) {
+                    $insert_photo_stmt = $conn->prepare("INSERT INTO used_tire_photos (tire_id, photo_url, photo_order) VALUES (?, ?, ?)");
+                    if ($insert_photo_stmt) {
+                        foreach ($uploaded_photos as $index => $photo_url) {
+                            $insert_photo_stmt->bind_param("isi", $product_id, $photo_url, $index);
+                            $insert_photo_stmt->execute();
+                        }
+                        $insert_photo_stmt->close();
+                    }
                 }
             } else {
-                // If changing from used to new, delete all photos
-                $delete_all_photos = "DELETE FROM used_tire_photos WHERE tire_id = ?";
-                $delete_stmt = $conn->prepare($delete_all_photos);
-                $delete_stmt->bind_param("i", $product_id);
-                $delete_stmt->execute();
+                // If condition changed from used to new, delete any existing photos
+                if ($product['condition'] === 'used') {
+                    $delete_photos_stmt = $conn->prepare("DELETE FROM used_tire_photos WHERE tire_id = ?");
+                    if ($delete_photos_stmt) {
+                        $delete_photos_stmt->bind_param("i", $product_id);
+                        $delete_photos_stmt->execute();
+                        $delete_photos_stmt->close();
+                    }
+                }
             }
             
-            // Success - set message and redirect
+            // Commit transaction
+            $conn->commit();
+            
             $_SESSION['success_message'] = 'Product updated successfully';
             header('Location: products.php');
             exit;
-        } else {
-            $errors[] = 'Database error: ' . $conn->error();
+            
+        } catch (Exception $e) {
+            // Rollback transaction
+            $conn->rollback();
+            $errors[] = $e->getMessage();
         }
     }
     

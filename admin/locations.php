@@ -15,7 +15,7 @@ requireLogin();
 $page_title = 'Manage Locations';
 
 // Get all locations
-$result = $conn->query('SELECT * FROM locations ORDER BY name ASC');
+$result = $conn->query('SELECT * FROM locations ORDER BY sort_order ASC, name ASC');
 
 // Include header
 include_once 'includes/header.php';
@@ -33,8 +33,10 @@ include_once 'includes/header.php';
             <tr>
                 <th>ID</th>
                 <th>Name</th>
-                <th>Description</th>
-                <th>Address</th>
+                <th>Contact Person</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -44,9 +46,18 @@ include_once 'includes/header.php';
                     <td><?php echo $location['id']; ?></td>
                     <td>
                         <strong><?php echo htmlspecialchars($location['name']); ?></strong>
+                        <?php if (!empty($location['description'])): ?>
+                            <br><small class="text-muted"><?php echo htmlspecialchars($location['description']); ?></small>
+                        <?php endif; ?>
                     </td>
-                    <td><?php echo htmlspecialchars($location['description'] ?? ''); ?></td>
-                    <td><?php echo htmlspecialchars($location['address'] ?? ''); ?></td>
+                    <td><?php echo htmlspecialchars($location['contact_person'] ?? ''); ?></td>
+                    <td><?php echo htmlspecialchars($location['contact_phone'] ?? $location['phone'] ?? ''); ?></td>
+                    <td><?php echo htmlspecialchars($location['contact_email'] ?? $location['email'] ?? ''); ?></td>
+                    <td>
+                        <span class="status-badge <?php echo ($location['is_active'] == 1) ? 'status-active' : 'status-inactive'; ?>">
+                            <?php echo ($location['is_active'] == 1) ? 'Active' : 'Inactive'; ?>
+                        </span>
+                    </td>
                     <td class="admin-actions">
                         <a href="edit_location.php?id=<?php echo $location['id']; ?>" class="btn-action btn-edit">
                             <i class="fas fa-edit"></i> Edit
@@ -109,6 +120,11 @@ include_once 'includes/header.php';
 .empty-state p {
     color: #999;
     margin-bottom: 1.5rem;
+}
+
+.text-muted {
+    color: #6c757d;
+    font-size: 0.875rem;
 }
 </style>
 

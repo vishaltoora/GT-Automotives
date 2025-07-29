@@ -71,8 +71,8 @@ if (!empty($where_conditions)) {
     $where_clause = "WHERE " . implode(' AND ', $where_conditions);
 }
 
-// Get products from database with brand names
-$query = "SELECT t.*, b.name as brand FROM tires t LEFT JOIN brands b ON t.brand_id = b.id $where_clause ORDER BY b.name, t.name";
+// Get products from database with brand names and logos
+$query = "SELECT t.*, b.name as brand, b.logo_url FROM tires t LEFT JOIN brands b ON t.brand_id = b.id $where_clause ORDER BY b.name, t.name";
 $result = $conn->query($query);
 
 // Get distinct brands and sizes for filters
@@ -81,6 +81,18 @@ $brands_result = $conn->query($brands_query);
 
 $sizes_query = "SELECT DISTINCT size FROM tires ORDER BY size";
 $sizes_result = $conn->query($sizes_query);
+
+// Brand logo mapping for fallback
+$brand_logos = [
+    'michelin' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Michelin.svg/200px-Michelin.svg.png',
+    'bridgestone' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Bridgestone_logo.svg/200px-Bridgestone_logo.svg.png',
+    'goodyear' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Goodyear_logo.svg/200px-Goodyear_logo.svg.png',
+    'continental' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Continental_AG_logo.svg/200px-Continental_AG_logo.svg.png',
+    'pirelli' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Pirelli_logo.svg/200px-Pirelli_logo.svg.png',
+    'yokohama' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Yokohama_Tire_Logo.svg/200px-Yokohama_Tire_Logo.svg.png',
+    'toyo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Toyo_Tire_logo.svg/200px-Toyo_Tire_logo.svg.png',
+    'hankook' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Hankook_Tire_logo.svg/200px-Hankook_Tire_logo.svg.png'
+];
 ?>
 
 <!DOCTYPE html>
@@ -218,6 +230,56 @@ $sizes_result = $conn->query($sizes_query);
             margin-top: 1.5rem;
         }
         
+        /* Brand logo styles */
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            background: white;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .brand-logo-fallback {
+            width: 80px;
+            height: 80px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
+        .product-image {
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px 8px 0 0;
+            padding: 2rem;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tire-icons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .tire-icon {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
         /* Responsive design */
         @media (max-width: 768px) {
             .filter-row {
@@ -251,6 +313,106 @@ $sizes_result = $conn->query($sizes_query);
         
         .filter-active label {
             color: #1976d2;
+        }
+        
+        /* Stock info styles */
+        .stock-info {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .stock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: 1px solid;
+        }
+        
+        .stock-badge i {
+            font-size: 0.8rem;
+        }
+        
+        .in-stock {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-color: #a5d6a7;
+        }
+        
+        .low-stock {
+            background-color: #fff9c4;
+            color: #f57c00;
+            border-color: #ffe082;
+        }
+        
+        .out-of-stock {
+            background-color: #ffebee;
+            color: #d32f2f;
+            border-color: #ef9a9a;
+        }
+        
+        /* Price info styles */
+        .price-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .per-tire-price,
+        .set-price {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .price-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .price-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+        
+        .set-price .price-value {
+            color: #1976d2;
+            font-size: 1.2rem;
+        }
+        
+        /* Responsive price display */
+        @media (max-width: 480px) {
+            .price-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .per-tire-price,
+            .set-price {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .price-label {
+                margin-bottom: 0;
+                margin-right: 0.5rem;
+            }
         }
     </style>
 </head>
@@ -310,6 +472,11 @@ $sizes_result = $conn->query($sizes_query);
             </form>
         </div>
 
+        <!-- Count rows for search summary -->
+        <?php 
+        $row_count = $result->num_rows;
+        ?>
+
         <!-- Search Results Summary -->
         <?php if (!empty($brand_filter) || !empty($size_filter) || !empty($search_filter)): ?>
             <div class="search-summary">
@@ -327,20 +494,35 @@ $sizes_result = $conn->query($sizes_query);
 
         <!-- Products Grid -->
         <div class="products-grid">
-            <?php 
-            // Count rows for MySQL
-            $row_count = $result->num_rows;
-            ?>
             <?php if ($row_count > 0): ?>
                 <?php while ($product = $result->fetch_assoc()): ?>
                     <div class="product-card">
                         <div class="product-image">
-                            <div class="emoji-container">
-                                <span class="tire-emoji">🛞</span>
-                                <span class="tire-emoji">🛞</span>
-                                <span class="tire-emoji">🛞</span>
-                                <span class="tire-emoji">🛞</span>
+                            <?php
+                            // Get brand logo URL
+                            $brand_name_lower = strtolower($product['brand']);
+                            $logo_url = $product['logo_url'];
+                            
+                            // If no logo_url in database, use fallback mapping
+                            if (empty($logo_url) && isset($brand_logos[$brand_name_lower])) {
+                                $logo_url = $brand_logos[$brand_name_lower];
+                            }
+                            
+                            if (!empty($logo_url)): ?>
+                                <img src="<?php echo htmlspecialchars($logo_url); ?>" alt="<?php echo htmlspecialchars($product['brand']); ?> Logo" class="brand-logo">
+                            <?php else: ?>
+                                <div class="brand-logo-fallback">
+                                    <i class="fas fa-tire"></i>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <div class="tire-icons">
+                                <span class="tire-icon">🛞</span>
+                                <span class="tire-icon">🛞</span>
+                                <span class="tire-icon">🛞</span>
+                                <span class="tire-icon">🛞</span>
                             </div>
+                            
                             <div class="brand-overlay"><?php echo htmlspecialchars(strtoupper($product['brand'])); ?></div>
                             <span class="set-label">Set of 4</span>
                         </div>
@@ -348,7 +530,32 @@ $sizes_result = $conn->query($sizes_query);
                             <div class="product-brand"><?php echo htmlspecialchars($product['brand']); ?></div>
                             <h3 class="product-name"><?php echo htmlspecialchars($product['name']); ?></h3>
                             <div class="product-size"><?php echo htmlspecialchars($product['size']); ?></div>
-                            <div class="product-price">$<?php echo number_format($product['price'] * 4, 2); ?></div>
+                            
+                            <!-- Price Display -->
+                            <div class="price-info">
+                                <div class="per-tire-price">
+                                    <span class="price-label">Per Tire:</span>
+                                    <span class="price-value">$<?php echo number_format($product['price'], 2); ?></span>
+                                </div>
+                                <div class="set-price">
+                                    <span class="price-label">Set of 4:</span>
+                                    <span class="price-value">$<?php echo number_format($product['price'] * 4, 2); ?></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Stock Quantity Display -->
+                            <div class="stock-info">
+                                <?php 
+                                $stock_quantity = intval($product['stock_quantity']);
+                                $stock_class = $stock_quantity > 10 ? 'in-stock' : ($stock_quantity > 0 ? 'low-stock' : 'out-of-stock');
+                                $stock_text = $stock_quantity > 10 ? 'In Stock' : ($stock_quantity > 0 ? 'Low Stock' : 'Out of Stock');
+                                ?>
+                                <span class="stock-badge <?php echo $stock_class; ?>">
+                                    <i class="fas fa-box"></i>
+                                    <?php echo $stock_text; ?> (<?php echo $stock_quantity; ?> available)
+                                </span>
+                            </div>
+                            
                             <p class="product-description"><?php echo htmlspecialchars($product['description']); ?></p>
                             <div class="product-features">
                                 <strong>Features:</strong>

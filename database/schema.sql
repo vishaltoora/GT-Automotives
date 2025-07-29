@@ -1,15 +1,15 @@
--- SQLite schema for GT Automotives
+-- MySQL/MariaDB schema for GT Automotives
 
 -- Create brands table
 CREATE TABLE IF NOT EXISTS brands (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
-    website TEXT,
-    logo_url TEXT,
+    website VARCHAR(500),
+    logo_url VARCHAR(500),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert sample brand data
 INSERT INTO brands (name, description, website) VALUES
@@ -24,32 +24,32 @@ INSERT INTO brands (name, description, website) VALUES
 
 -- Create tires table (updated to include condition field)
 CREATE TABLE IF NOT EXISTS tires (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    brand_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    size TEXT NOT NULL,
-    price REAL NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    brand_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    size VARCHAR(50) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
     description TEXT,
-    image_url TEXT,
-    stock_quantity INTEGER NOT NULL DEFAULT 0,
-    condition TEXT DEFAULT 'new' CHECK(condition IN ('new', 'used')),
+    image_url VARCHAR(500),
+    stock_quantity INT NOT NULL DEFAULT 0,
+    `condition` ENUM('new', 'used') DEFAULT 'new',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Create used_tire_photos table for storing multiple photos per used tire
 CREATE TABLE IF NOT EXISTS used_tire_photos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tire_id INTEGER NOT NULL,
-    photo_url TEXT NOT NULL,
-    photo_order INTEGER DEFAULT 0,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tire_id INT NOT NULL,
+    photo_url VARCHAR(500) NOT NULL,
+    photo_order INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tire_id) REFERENCES tires(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert sample tire data (updated to use brand_id)
-INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, condition) VALUES
+INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, `condition`) VALUES
 (1, 'Pilot Sport 4S', '225/45R17', 199.99, 'High-performance summer tire with excellent grip and handling.', 'images/tires/michelin-pilot-sport-4s.jpg', 50, 'new'),
 (2, 'Potenza RE-71R', '245/40R18', 189.99, 'Ultra-high performance summer tire for track and street use.', 'images/tires/bridgestone-potenza-re71r.jpg', 40, 'new'),
 (4, 'ExtremeContact DWS06', '235/45R17', 179.99, 'All-season ultra-high performance tire with excellent wet and dry handling.', 'images/tires/continental-dws06.jpg', 45, 'new'),
@@ -61,73 +61,123 @@ INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_qu
 
 -- Create users table for admin authentication
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
-    email TEXT NOT NULL,
-    is_admin INTEGER DEFAULT 1 AUTOINCREMENT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    is_admin TINYINT(1) DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert default admin user (password: admin123)
 INSERT INTO users (username, password, email, is_admin) 
 VALUES ('admin', '$2y$10$Nq/VTTeC7NqIrdWUwJJvR.mRXMy8YH3wF5WKIUG63yzsCEP3Cq34q', 'admin@gtautomotives.com', 1);
 
-INSERT INTO users (username, password, email) VALUES (
-  'rohit.toora',
-  '$2y$10$.eE74/xeHHDp4ngIaWtBTexAmf7SgyjC3eanwlYoeSotwqrvyp38e',
-  'rohit.toora@gmail.com'
-);
-
-
 -- Create inquiries table
 CREATE TABLE IF NOT EXISTS inquiries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    phone TEXT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
     message TEXT NOT NULL,
-    tire_id INTEGER,
-    status TEXT DEFAULT 'new' CHECK(status IN ('new', 'in_progress', 'completed')),
+    tire_id INT,
+    status ENUM('new', 'in_progress', 'completed') DEFAULT 'new',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tire_id) REFERENCES tires(id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Create sales table
 CREATE TABLE IF NOT EXISTS sales (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    invoice_number TEXT NOT NULL UNIQUE,
-    customer_name TEXT NOT NULL,
-    customer_email TEXT,
-    customer_phone TEXT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_number VARCHAR(100) NOT NULL UNIQUE,
+    customer_name VARCHAR(255) NOT NULL,
+    customer_email VARCHAR(255),
+    customer_phone VARCHAR(50),
     customer_address TEXT,
-    customer_business_name TEXT,
-    subtotal REAL NOT NULL DEFAULT 0,
-    gst_rate REAL NOT NULL DEFAULT 0.05,
-    gst_amount REAL NOT NULL DEFAULT 0,
-    pst_rate REAL NOT NULL DEFAULT 0.07,
-    pst_amount REAL NOT NULL DEFAULT 0,
-    total_amount REAL NOT NULL DEFAULT 0,
-    payment_method TEXT DEFAULT 'cash_with_invoice',
-    payment_status TEXT DEFAULT 'pending' CHECK(payment_status IN ('pending', 'paid', 'cancelled')),
+    customer_business_name VARCHAR(255),
+    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+    gst_rate DECIMAL(5,4) NOT NULL DEFAULT 0.05,
+    gst_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    pst_rate DECIMAL(5,4) NOT NULL DEFAULT 0.07,
+    pst_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    payment_method ENUM('cash_with_invoice', 'credit_card', 'bank_transfer') DEFAULT 'cash_with_invoice',
+    payment_status ENUM('pending', 'paid', 'cancelled') DEFAULT 'pending',
     notes TEXT,
-    created_by INTEGER NOT NULL,
+    created_by INT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Create sale_items table
 CREATE TABLE IF NOT EXISTS sale_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sale_id INTEGER NOT NULL,
-    tire_id INTEGER NOT NULL,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    unit_price REAL NOT NULL,
-    total_price REAL NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sale_id INT NOT NULL,
+    tire_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    unit_price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
     FOREIGN KEY (tire_id) REFERENCES tires(id) ON DELETE CASCADE
-); 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Create service_categories table
+CREATE TABLE IF NOT EXISTS service_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    sort_order INT DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert sample service categories
+INSERT INTO service_categories (name, description, sort_order) VALUES
+('Installation', 'Tire installation and mounting services', 1),
+('Maintenance', 'Regular tire maintenance services', 2),
+('Repair', 'Tire repair and emergency services', 3),
+('Inspection', 'Tire inspection and safety checks', 4);
+
+-- Create services table (updated to include category)
+CREATE TABLE IF NOT EXISTS services (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(255) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    duration_minutes INT DEFAULT 60,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category) REFERENCES service_categories(name) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert sample services with categories
+INSERT INTO services (name, description, category, price, duration_minutes) VALUES
+('Tire Installation', 'Professional tire mounting and balancing service', 'Installation', 25.00, 30),
+('Wheel Alignment', 'Complete wheel alignment service', 'Maintenance', 75.00, 60),
+('Tire Rotation', 'Tire rotation and balance service', 'Maintenance', 35.00, 45),
+('Tire Repair', 'Puncture repair and patch service', 'Repair', 15.00, 20),
+('Tire Pressure Check', 'Comprehensive tire pressure inspection', 'Inspection', 10.00, 15);
+
+-- Create locations table
+CREATE TABLE IF NOT EXISTS locations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    hours TEXT,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert sample location
+INSERT INTO locations (name, address, phone, email, hours) VALUES
+('GT Automotives Main Store', '123 Main Street, Vancouver, BC V6B 1A1', '(604) 555-0123', 'info@gtautomotives.com', 'Mon-Fri: 8AM-6PM, Sat: 9AM-5PM, Sun: Closed'); 

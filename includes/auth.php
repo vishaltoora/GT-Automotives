@@ -6,18 +6,32 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Function to check if user is logged in
 function isLoggedIn() {
-    return isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']);
+    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 }
 
 // Function to get current user ID
 function getCurrentUserId() {
-    return $_SESSION['admin_id'] ?? null;
+    return $_SESSION['user_id'] ?? null;
+}
+
+// Function to check if user is admin
+function isAdmin() {
+    return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1;
 }
 
 // Function to redirect to login page if not logged in
 function requireLogin() {
     if (!isLoggedIn()) {
         header("Location: login.php");
+        exit;
+    }
+}
+
+// Function to require admin access
+function requireAdmin() {
+    requireLogin();
+    if (!isAdmin()) {
+        header("Location: index.php");
         exit;
     }
 }

@@ -25,8 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($user) {
             // Set session variables
-            $_SESSION['admin_id'] = $user['id'];
-            $_SESSION['admin_username'] = $user['username'];
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['is_admin'] = $user['is_admin'];
             
             // Redirect to admin dashboard
             header("Location: index.php");
@@ -99,38 +100,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .btn-login:hover {
-            background: #0069d9;
+            background: #0056b3;
         }
         
-        .back-link {
+        .login-footer {
             text-align: center;
-            margin-top: 1.5rem;
-        }
-        
-        .back-link a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        
-        .back-link a:hover {
-            text-decoration: underline;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1>Admin Login</h1>
+        <h1><i class="fas fa-lock"></i> Admin Login</h1>
         
         <?php if ($error): ?>
             <div class="error-message">
-                <?php echo htmlspecialchars($error); ?>
+                <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
             </div>
         <?php endif; ?>
         
-        <form method="POST" action="">
+        <form method="POST">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
+                <input type="text" id="username" name="username" required 
+                       value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>">
             </div>
             
             <div class="form-group">
@@ -138,12 +133,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="password" id="password" name="password" required>
             </div>
             
-            <button type="submit" class="btn-login">Login</button>
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
         </form>
         
-        <div class="back-link">
-            <a href="../index.php">← Back to Website</a>
+        <div class="login-footer">
+            <p>GT Automotives Admin Panel</p>
         </div>
     </div>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </body>
 </html> 

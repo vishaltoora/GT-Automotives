@@ -22,8 +22,10 @@ if (!$sale_id) {
 // Get sale details
 $stmt = $conn->prepare("SELECT * FROM sales WHERE id = ?");
 $stmt->bind_param("i", $sale_id);
+$stmt->execute();
 $result = $stmt->get_result();
 $sale = $result->fetch_assoc();
+$stmt->close();
 
 if (!$sale) {
     header('Location: sales.php');
@@ -75,40 +77,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // If sale is being cancelled, restore inventory
         if ($old_payment_status !== 'cancelled' && $new_payment_status === 'cancelled') {
-            // Get sale items to restore inventory
-            $restore_items_query = "SELECT tire_id, quantity FROM sale_items WHERE sale_id = ?";
+            // Get sale items to restore inventory (only for products, not services)
+            $restore_items_query = "SELECT tire_id, quantity FROM sale_items WHERE sale_id = ? AND tire_id IS NOT NULL";
             $restore_stmt = $conn->prepare($restore_items_query);
             $restore_stmt->bind_param("i", $sale_id);
             $restore_stmt->execute();
             $restore_result = $restore_stmt->get_result();
             
             while ($item = $restore_result->fetch_assoc()) {
-                $restore_stock = $conn->prepare("
-                    UPDATE tires SET stock_quantity = stock_quantity + ? WHERE id = ?
-                ");
-                $restore_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
-                $restore_stock->execute();
-                $restore_stock->close();
+                if ($item['tire_id']) {
+                    $restore_stock = $conn->prepare("
+                        UPDATE tires SET stock_quantity = stock_quantity + ? WHERE id = ?
+                    ");
+                    $restore_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
+                    $restore_stock->execute();
+                    $restore_stock->close();
+                }
             }
             $restore_stmt->close();
         }
         
         // If sale is being reactivated from cancelled, deduct inventory again
         if ($old_payment_status === 'cancelled' && $new_payment_status !== 'cancelled') {
-            // Get sale items to deduct inventory
-            $deduct_items_query = "SELECT tire_id, quantity FROM sale_items WHERE sale_id = ?";
+            // Get sale items to deduct inventory (only for products, not services)
+            $deduct_items_query = "SELECT tire_id, quantity FROM sale_items WHERE sale_id = ? AND tire_id IS NOT NULL";
             $deduct_stmt = $conn->prepare($deduct_items_query);
             $deduct_stmt->bind_param("i", $sale_id);
             $deduct_stmt->execute();
             $deduct_result = $deduct_stmt->get_result();
             
             while ($item = $deduct_result->fetch_assoc()) {
-                $deduct_stock = $conn->prepare("
-                    UPDATE tires SET stock_quantity = stock_quantity - ? WHERE id = ?
-                ");
-                $deduct_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
-                $deduct_stock->execute();
-                $deduct_stock->close();
+                if ($item['tire_id']) {
+                    $deduct_stock = $conn->prepare("
+                        UPDATE tires SET stock_quantity = stock_quantity - ? WHERE id = ?
+                    ");
+                    $deduct_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
+                    $deduct_stock->execute();
+                    $deduct_stock->close();
+                }
             }
             $deduct_stmt->close();
         }

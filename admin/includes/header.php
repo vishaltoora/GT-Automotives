@@ -483,7 +483,7 @@ if ($current_file !== 'login.php') {
     <div class="admin-container">
         <aside class="admin-sidebar">
             <div class="admin-brand">
-                GT Automotives
+                <a href="../index.php" style="color: white; text-decoration: none; display: block;">GT Automotives</a>
             </div>
             
             <ul class="admin-nav">
@@ -611,6 +611,13 @@ if ($current_file !== 'login.php') {
                         <i class="fas fa-chevron-down section-toggle"></i>
                     </div>
                     <ul class="nav-section-items" id="users-section">
+                        <?php if (isAdmin()): ?>
+                        <li>
+                            <a href="users.php" class="<?php echo $current_file === 'users.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-users"></i> Manage Users
+                            </a>
+                        </li>
+                        <?php endif; ?>
                         <li>
                             <a href="profile.php" class="<?php echo $current_file === 'profile.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-user"></i> Profile

@@ -270,6 +270,10 @@ include_once 'includes/header.php';
                         <a href="generate_invoice.php?id=<?php echo $sale['id']; ?>" class="btn-action btn-view" target="_blank">
                             <i class="fas fa-file-pdf"></i> Invoice
                         </a>
+                        <a href="delete_sale.php?id=<?php echo $sale['id']; ?>" class="btn-action btn-delete delete-confirm" 
+                           onclick="return confirm('Are you sure you want to delete this sale? This action cannot be undone.')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -316,6 +320,63 @@ include_once 'includes/header.php';
 .status-cancelled {
     background: #f8d7da;
     color: #721c24;
+}
+
+/* Action buttons styling */
+.admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.btn-view {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-color: #bbdefb;
+}
+
+.btn-view:hover {
+    background: #bbdefb;
+    color: #1565c0;
+}
+
+.btn-edit {
+    background: #fff3e0;
+    color: #f57c00;
+    border-color: #ffe0b2;
+}
+
+.btn-edit:hover {
+    background: #ffe0b2;
+    color: #ef6c00;
+}
+
+.btn-delete {
+    background: #ffebee;
+    color: #d32f2f;
+    border-color: #ffcdd2;
+}
+
+.btn-delete:hover {
+    background: #ffcdd2;
+    color: #c62828;
+}
+
+.btn-action i {
+    font-size: 0.75rem;
 }
 
 .search-filter-container {

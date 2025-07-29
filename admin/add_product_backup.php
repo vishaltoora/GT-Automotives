@@ -124,78 +124,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Use emoji for image_url as we're using emojis instead of actual images
         $image_url = 'images/tire-emoji.png';
         
-        // Ensure all variables are properly defined
-        $brand_id = intval($brand_id);
-        $product_type = trim($product_type);
-        $size = trim($size);
-        $price = floatval($price);
-        $description = trim($description);
-        $image_url = trim($image_url);
-        $stock_quantity = intval($stock_quantity);
-        $condition = trim($condition);
-        $location_id = intval($location_id);
+        $query = "INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, `condition`, location_id) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
-        // Debug: Check if all variables are defined
-        if (!isset($brand_id) || !isset($product_type) || !isset($size) || !isset($price) || 
-            !isset($description) || !isset($image_url) || !isset($stock_quantity) || 
-            !isset($condition) || !isset($location_id)) {
-            $errors[] = 'One or more variables are not defined';
-        } else {
-            // Ensure all variables are of the correct type for PHP 8.4 compatibility
-            $brand_id = (int)$brand_id;
-            $product_type = (string)$product_type;
-            $size = (string)$size;
-            $price = (float)$price;
-            $description = (string)$description;
-            $image_url = (string)$image_url;
-            $stock_quantity = (int)$stock_quantity;
-            $condition = (string)$condition;
-            $location_id = (int)$location_id;
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("issdsisi", $brand_id, $product_type, $size, $price, $description, $image_url, $stock_quantity, $condition, $location_id);
+        
+        if ($stmt->execute()) {
+            $tire_id = $conn->insert_id;
             
-            // Use prepared statement with proper escaping
-            $query = "INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, `condition`, location_id) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            $stmt = $conn->prepare($query);
-            if ($stmt) {
-                // Use direct SQL with proper escaping to avoid bind_param issues
-                $escaped_brand_id = $conn->real_escape_string($brand_id);
-                $escaped_product_type = $conn->real_escape_string($product_type);
-                $escaped_size = $conn->real_escape_string($size);
-                $escaped_price = $conn->real_escape_string($price);
-                $escaped_description = $conn->real_escape_string($description);
-                $escaped_image_url = $conn->real_escape_string($image_url);
-                $escaped_stock_quantity = $conn->real_escape_string($stock_quantity);
-                $escaped_condition = $conn->real_escape_string($condition);
-                $escaped_location_id = $conn->real_escape_string($location_id);
-                
-                $direct_query = "INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, `condition`, location_id) 
-                               VALUES ($escaped_brand_id, '$escaped_product_type', '$escaped_size', $escaped_price, '$escaped_description', '$escaped_image_url', $escaped_stock_quantity, '$escaped_condition', $escaped_location_id)";
-                
-                if ($conn->query($direct_query)) {
-                    $tire_id = $conn->insert_id;
-                    
-                    // Insert photos for used tires
-                    if ($condition === 'used' && !empty($uploaded_photos)) {
-                        foreach ($uploaded_photos as $index => $photo_url) {
-                            $escaped_tire_id = $conn->real_escape_string($tire_id);
-                            $escaped_photo_url = $conn->real_escape_string($photo_url);
-                            $escaped_index = $conn->real_escape_string($index);
-                            $photo_query = "INSERT INTO used_tire_photos (tire_id, photo_url, photo_order) VALUES ($escaped_tire_id, '$escaped_photo_url', $escaped_index)";
-                            $conn->query($photo_query);
-                        }
-                    }
-                    
-                    // Success - set message and redirect
-                    $_SESSION['success_message'] = 'Product added successfully';
-                    header('Location: products.php');
-                    exit;
-                } else {
-                    $errors[] = 'Database error: ' . $conn->error;
+            // Insert photos for used tires
+            if ($condition === 'used' && !empty($uploaded_photos)) {
+                foreach ($uploaded_photos as $index => $photo_url) {
+                    $photo_query = "INSERT INTO used_tire_photos (tire_id, photo_url, photo_order) VALUES (?, ?, ?)";
+                    $photo_stmt = $conn->prepare($photo_query);
+                    $photo_stmt->bind_param("isi", $tire_id, $photo_url, $index);
+                    $photo_stmt->execute();
                 }
-            } else {
-                $errors[] = 'Failed to prepare statement: ' . $conn->error;
             }
+            
+            // Success - set message and redirect
+            $_SESSION['success_message'] = 'Product added successfully';
+            header('Location: products.php');
+            exit;
+        } else {
+            $errors[] = 'Database error: ' . $conn->error;
         }
     }
     

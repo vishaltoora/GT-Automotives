@@ -19,11 +19,14 @@ if (!$sale_id) {
     exit;
 }
 
-// Get sale details
-$stmt = $conn->prepare("SELECT * FROM sales WHERE id = ?");
-$stmt->bind_param("i", $sale_id);
-$result = $stmt->get_result();
-$sale = $result->fetch_assoc();
+// Get sale details first to check if it exists
+$sale_query = "SELECT * FROM sales WHERE id = ?";
+$sale_stmt = $conn->prepare($sale_query);
+$sale_stmt->bind_param("i", $sale_id);
+$sale_stmt->execute();
+$sale_result = $sale_stmt->get_result();
+$sale = $sale_result->fetch_assoc();
+$sale_stmt->close();
 
 if (!$sale) {
     $_SESSION['error_message'] = 'Sale not found.';
@@ -31,218 +34,59 @@ if (!$sale) {
     exit;
 }
 
-// Handle form submission for deletion
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        // Begin transaction
-        $conn->exec('BEGIN TRANSACTION');
-        
-        // Delete sale items first (due to foreign key constraint)
-        $delete_items = $conn->prepare("DELETE FROM sale_items WHERE sale_id = ?");
-        $delete_items->bind_param("i", $sale_id);
-        $delete_items->execute();
-        
-        // Delete the sale
-        $stmt = $conn->prepare("DELETE FROM sales WHERE id = ?");
-        $stmt->bind_param("i", $sale_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = 'Sale deleted successfully';
-        } else {
-            $_SESSION['error_message'] = 'Error deleting sale: ' . $conn->error;
-        }
-        
-        // Commit transaction
-        $conn->exec('COMMIT');
-        
-        header('Location: sales.php');
-        exit;
-        
-    } catch (Exception $e) {
-        $conn->exec('ROLLBACK');
-        $_SESSION['error_message'] = 'Error deleting sale: ' . $e->getMessage();
-        header('Location: view_sale.php?id=' . $sale_id);
-        exit;
-    }
-}
-
-// Set page title
-$page_title = 'Delete Sale - ' . $sale['invoice_number'];
-
-// Include header
-include_once 'includes/header.php';
-?>
-
-<div class="admin-header">
-    <h1>Delete Sale</h1>
-    <div class="admin-actions">
-        <a href="view_sale.php?id=<?php echo $sale_id; ?>" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Sale
-        </a>
-    </div>
-</div>
-
-<?php if (isset($_SESSION['error_message'])): ?>
-    <div class="alert alert-danger">
-        <i class="fas fa-exclamation-triangle"></i>
-        <?php echo htmlspecialchars($_SESSION['error_message']); ?>
-    </div>
-    <?php unset($_SESSION['error_message']); ?>
-<?php endif; ?>
-
-<div class="alert alert-warning">
-    <i class="fas fa-exclamation-triangle"></i>
-    <strong>Warning:</strong> You are about to delete the sale "<?php echo htmlspecialchars($sale['invoice_number']); ?>".
-</div>
-
-<div class="sale-deletion-details">
-    <h3>Sale Information</h3>
-    <div class="info-grid">
-        <div class="info-item">
-            <label>Invoice Number:</label>
-            <span><?php echo htmlspecialchars($sale['invoice_number']); ?></span>
-        </div>
-        <div class="info-item">
-            <label>Customer:</label>
-            <span><?php echo htmlspecialchars($sale['customer_name']); ?></span>
-        </div>
-        <div class="info-item">
-            <label>Total Amount:</label>
-            <span>$<?php echo number_format($sale['total_amount'], 2); ?></span>
-        </div>
-        <div class="info-item">
-            <label>Date Created:</label>
-            <span><?php echo date('F j, Y \a\t g:i A', strtotime($sale['created_at'])); ?></span>
-        </div>
-    </div>
+try {
+    // Start transaction
+    $conn->query('START TRANSACTION');
     
-    <div class="deletion-effects">
-        <h4>What will happen when you delete this sale:</h4>
-        <ul>
-            <li><i class="fas fa-trash"></i> The sale record will be permanently deleted</li>
-            <li><i class="fas fa-exclamation-triangle"></i> This action cannot be undone</li>
-            <li><i class="fas fa-file-invoice"></i> The invoice will no longer be accessible</li>
-            <li><i class="fas fa-info-circle"></i> Inventory quantities will remain unchanged</li>
-        </ul>
-    </div>
-</div>
-
-<form method="POST" class="deletion-form">
-    <div class="form-actions">
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you absolutely sure you want to delete this sale? This action cannot be undone.')">
-            <i class="fas fa-trash"></i> Delete Sale Permanently
-        </button>
-        <a href="view_sale.php?id=<?php echo $sale_id; ?>" class="btn btn-secondary">
-            <i class="fas fa-times"></i> Cancel
-        </a>
-    </div>
-</form>
-
-<style>
-.sale-deletion-details {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 2rem;
+    // If sale is not cancelled, restore inventory for products
+    if ($sale['payment_status'] !== 'cancelled') {
+        // Get sale items to restore inventory (only for products, not services)
+        $restore_items_query = "SELECT tire_id, quantity FROM sale_items WHERE sale_id = ? AND tire_id IS NOT NULL";
+        $restore_stmt = $conn->prepare($restore_items_query);
+        $restore_stmt->bind_param("i", $sale_id);
+        $restore_stmt->execute();
+        $restore_result = $restore_stmt->get_result();
+        
+        while ($item = $restore_result->fetch_assoc()) {
+            if ($item['tire_id']) {
+                $restore_stock = $conn->prepare("
+                    UPDATE tires SET stock_quantity = stock_quantity + ? WHERE id = ?
+                ");
+                $restore_stock->bind_param("ii", $item['quantity'], $item['tire_id']);
+                $restore_stock->execute();
+                $restore_stock->close();
+            }
+        }
+        $restore_stmt->close();
+    }
+    
+    // Delete sale items first (due to foreign key constraint)
+    $delete_items_query = "DELETE FROM sale_items WHERE sale_id = ?";
+    $delete_items_stmt = $conn->prepare($delete_items_query);
+    $delete_items_stmt->bind_param("i", $sale_id);
+    $delete_items_stmt->execute();
+    $delete_items_stmt->close();
+    
+    // Delete the sale record
+    $delete_sale_query = "DELETE FROM sales WHERE id = ?";
+    $delete_sale_stmt = $conn->prepare($delete_sale_query);
+    $delete_sale_stmt->bind_param("i", $sale_id);
+    $delete_sale_stmt->execute();
+    $delete_sale_stmt->close();
+    
+    // Commit transaction
+    $conn->query('COMMIT');
+    
+    // Set success message
+    $_SESSION['success_message'] = 'Sale deleted successfully!';
+    
+} catch (Exception $e) {
+    // Rollback transaction on error
+    $conn->query('ROLLBACK');
+    $_SESSION['error_message'] = 'Error deleting sale: ' . $e->getMessage();
 }
 
-.sale-deletion-details h3 {
-    margin: 0 0 1rem 0;
-    color: #333;
-    border-bottom: 2px solid #dc3545;
-    padding-bottom: 0.5rem;
-}
-
-.info-grid {
-    display: grid;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-}
-
-.info-item label {
-    font-weight: 600;
-    color: #333;
-}
-
-.info-item span {
-    color: #666;
-}
-
-.deletion-effects {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 4px;
-    padding: 1rem;
-}
-
-.deletion-effects h4 {
-    margin: 0 0 1rem 0;
-    color: #856404;
-    font-size: 1rem;
-}
-
-.deletion-effects ul {
-    margin: 0;
-    padding-left: 1.5rem;
-}
-
-.deletion-effects li {
-    margin-bottom: 0.5rem;
-    color: #856404;
-}
-
-.deletion-effects li i {
-    width: 16px;
-    margin-right: 0.5rem;
-    color: #856404;
-}
-
-.deletion-form {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-}
-
-.alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.alert-warning {
-    background: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeaa7;
-}
-
-.alert-danger {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-</style>
-
-<?php
-// Include footer
-include_once 'includes/footer.php';
+// Redirect back to sales list
+header('Location: sales.php');
+exit;
 ?> 
