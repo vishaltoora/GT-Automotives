@@ -23,6 +23,7 @@ $product_id = intval($_GET['id']);
 // Check if product exists
 $stmt = $conn->prepare("SELECT * FROM tires WHERE id = ?");
 $stmt->bind_param("i", $product_id);
+$stmt->execute();
 $result = $stmt->get_result();
 $product = $result->fetch_assoc();
 
@@ -32,16 +33,20 @@ if ($result->num_rows === 0) {
     exit;
 }
 
-// Delete the product (cascade will handle related records)
-$stmt = $conn->prepare("DELETE FROM tires WHERE id = ?");
-$stmt->bind_param("i", $product_id);
+// Close the first statement
+$stmt->close();
 
-if ($stmt->execute()) {
+// Delete the product (cascade will handle related records)
+$delete_stmt = $conn->prepare("DELETE FROM tires WHERE id = ?");
+$delete_stmt->bind_param("i", $product_id);
+
+if ($delete_stmt->execute()) {
     $_SESSION['success_message'] = 'Product deleted successfully';
 } else {
     $_SESSION['error_message'] = 'Error deleting product: ' . $conn->error();
 }
 
+$delete_stmt->close();
 header('Location: products.php');
 exit;
 ?> 

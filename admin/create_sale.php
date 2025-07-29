@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($is_cash_without_invoice) {
             // For cash without invoice, only update inventory, don't create sale record
-            $conn->exec('BEGIN TRANSACTION');
+            $conn->query('START TRANSACTION');
             
             // Update inventory for each product
             foreach ($items_data as $item) {
@@ -237,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Commit transaction
-            $conn->exec('COMMIT');
+            $conn->query('COMMIT');
             
             // Set success message and redirect
             $_SESSION['success_message'] = 'Cash transaction completed successfully! Inventory has been updated.';
@@ -246,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Regular sale with invoice - create sale record
             // Begin transaction
-            $conn->exec('BEGIN TRANSACTION');
+            $conn->query('START TRANSACTION');
             
             // Insert sale record
             $sale_stmt = $conn->prepare("
@@ -256,10 +256,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
-            $sale_stmt->bind_param("ssssssddddsssi", $invoice_number, $_POST['customer_name'], $_POST['customer_business_name'] ?? '', $_POST['customer_email'] ?? '', $_POST['customer_phone'] ?? '', $_POST['customer_address'] ?? '', $subtotal, $gst_rate, $gst_amount, $pst_rate, $pst_amount, $total_amount, $_POST['payment_method'] ?? 'cash_with_invoice', $_POST['payment_status'] ?? 'pending', $_POST['notes'] ?? '', $user_id);
+            // Store all values in variables for bind_param
+            $customer_name = $_POST['customer_name'];
+            $customer_business_name = $_POST['customer_business_name'] ?? '';
+            $customer_email = $_POST['customer_email'] ?? '';
+            $customer_phone = $_POST['customer_phone'] ?? '';
+            $customer_address = $_POST['customer_address'] ?? '';
+            $payment_method = $_POST['payment_method'] ?? 'cash_with_invoice';
+            $payment_status = $_POST['payment_status'] ?? 'pending';
+            $notes = $_POST['notes'] ?? '';
             
-            $sale_stmt->execute();
-            $sale_id = $conn->insert_id();
+            // Use direct SQL with proper escaping to avoid bind_param issues
+            $escaped_invoice_number = $conn->real_escape_string($invoice_number);
+            $escaped_customer_name = $conn->real_escape_string($customer_name);
+            $escaped_customer_business_name = $conn->real_escape_string($customer_business_name);
+            $escaped_customer_email = $conn->real_escape_string($customer_email);
+            $escaped_customer_phone = $conn->real_escape_string($customer_phone);
+            $escaped_customer_address = $conn->real_escape_string($customer_address);
+            $escaped_payment_method = $conn->real_escape_string($payment_method);
+            $escaped_payment_status = $conn->real_escape_string($payment_status);
+            $escaped_notes = $conn->real_escape_string($notes);
+            
+            $sale_query = "
+                INSERT INTO sales (
+                    invoice_number, customer_name, customer_business_name, customer_email, customer_phone, customer_address,
+                    subtotal, gst_rate, gst_amount, pst_rate, pst_amount, total_amount, payment_method, payment_status, notes, created_by
+                ) VALUES (
+                    '$escaped_invoice_number', '$escaped_customer_name', '$escaped_customer_business_name', '$escaped_customer_email', 
+                    '$escaped_customer_phone', '$escaped_customer_address', $subtotal, $gst_rate, $gst_amount, $pst_rate, 
+                    $pst_amount, $total_amount, '$escaped_payment_method', '$escaped_payment_status', '$escaped_notes', $user_id
+                )
+            ";
+            
+            $conn->query($sale_query);
+            $sale_id = $conn->insert_id;
             
             // Insert sale items
             $item_stmt = $conn->prepare("
@@ -282,7 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Commit transaction
-            $conn->exec('COMMIT');
+            $conn->query('COMMIT');
             
             // Redirect to view sale page
             header("Location: view_sale.php?id=" . $sale_id . "&created=1");
@@ -290,7 +320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
     } catch (Exception $e) {
-        $conn->exec('ROLLBACK');
+        $conn->query('ROLLBACK');
         $error_message = $e->getMessage();
     }
 }

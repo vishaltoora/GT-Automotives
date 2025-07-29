@@ -483,7 +483,7 @@ if ($current_file !== 'login.php') {
     <div class="admin-container">
         <aside class="admin-sidebar">
             <div class="admin-brand">
-                GT Automotives
+                <a href="../index.php" style="color: white; text-decoration: none; display: block;">GT Automotives</a>
             </div>
             
             <ul class="admin-nav">
