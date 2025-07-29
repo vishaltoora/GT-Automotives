@@ -26,47 +26,45 @@ $product_id = intval($_GET['id']);
 // Fetch brands for dropdown
 $brands = [];
 $result = $conn->query('SELECT id, name FROM brands ORDER BY name ASC');
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $result->fetch_assoc()) {
     $brands[] = $row;
 }
 
 // Fetch locations for dropdown
 $locations = [];
 $locations_result = $conn->query('SELECT id, name FROM locations ORDER BY name ASC');
-while ($row = $locations_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $locations_result->fetch_assoc()) {
     $locations[] = $row;
 }
 
 // Fetch sizes for dropdown
 $sizes = [];
 $sizes_result = $conn->query('SELECT id, name, description FROM sizes WHERE is_active = 1 ORDER BY sort_order ASC, name ASC');
-while ($row = $sizes_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $sizes_result->fetch_assoc()) {
     $sizes[] = $row;
 }
 
 // Get product data
-$query = "SELECT * FROM tires WHERE id = ? LIMIT 1";
-$stmt = $conn->prepare($query);
-$stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
-$result = $stmt->execute();
+$stmt = $conn->prepare("SELECT * FROM tires WHERE id = ?");
+$stmt->bind_param("i", $product_id);
+$result = $stmt->get_result();
 
-if ($result->numColumns() === 0) {
+if ($result->num_rows === 0) {
     $_SESSION['error_message'] = 'Product not found';
     header('Location: products.php');
     exit;
 }
 
-$product = $result->fetchArray(SQLITE3_ASSOC);
+$product = $result->fetch_assoc();
 
 // Get existing photos for used tires
 $existing_photos = [];
 if ($product['condition'] === 'used') {
-    $photos_query = "SELECT * FROM used_tire_photos WHERE tire_id = ? ORDER BY photo_order ASC";
-    $photos_stmt = $conn->prepare($photos_query);
-    $photos_stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
-    $photos_result = $photos_stmt->execute();
+    $photos_stmt = $conn->prepare("SELECT * FROM used_tire_photos WHERE tire_id = ?");
+    $photos_stmt->bind_param("i", $product_id);
+    $photos_result = $photos_stmt->get_result();
     
-    while ($photo = $photos_result->fetchArray(SQLITE3_ASSOC)) {
+    while ($photo = $photos_result->fetch_assoc()) {
         $existing_photos[] = $photo;
     }
 }
@@ -164,48 +162,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // If no errors, update the product
     if (empty($errors)) {
-        $stmt = $conn->prepare("
-            UPDATE tires 
-            SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, `condition` = ?, location_id = ?
-            WHERE id = ?
-        ");
-        
-        $stmt->bindValue(1, $brand_id, SQLITE3_INTEGER);
-        $stmt->bindValue(2, $product_type, SQLITE3_TEXT);
-        $stmt->bindValue(3, $size, SQLITE3_TEXT);
-        $stmt->bindValue(4, $price, SQLITE3_FLOAT);
-        $stmt->bindValue(5, $description, SQLITE3_TEXT);
-        $stmt->bindValue(6, $stock_quantity, SQLITE3_INTEGER);
-        $stmt->bindValue(7, $condition, SQLITE3_TEXT);
-        $stmt->bindValue(8, $location_id, SQLITE3_INTEGER);
-        $stmt->bindValue(9, $product_id, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("UPDATE tires SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, condition = ?, location_id = ? WHERE id = ?");
+        $stmt->bind_param("issdsisi", $brand_id, $product_type, $size, $price, $description, $stock_quantity, $condition, $location_id, $product_id);
         
         if ($stmt->execute()) {
             // Handle photo management for used tires
             if ($condition === 'used') {
                 // Delete photos that were marked for deletion
                 foreach ($photos_to_delete as $photo_id) {
-                    $delete_query = "DELETE FROM used_tire_photos WHERE id = ? AND tire_id = ?";
-                    $delete_stmt = $conn->prepare($delete_query);
-                    $delete_stmt->bindValue(1, $photo_id, SQLITE3_INTEGER);
-                    $delete_stmt->bindValue(2, $product_id, SQLITE3_INTEGER);
+                    $delete_stmt = $conn->prepare("DELETE FROM used_tire_photos WHERE id = ? AND tire_id = ?");
+                    $delete_stmt->bind_param("ii", $photo_id, $product_id);
                     $delete_stmt->execute();
                 }
                 
                 // Insert new photos
                 foreach ($uploaded_photos as $index => $photo_url) {
-                    $photo_query = "INSERT INTO used_tire_photos (tire_id, photo_url, photo_order) VALUES (?, ?, ?)";
-                    $photo_stmt = $conn->prepare($photo_query);
-                    $photo_stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
-                    $photo_stmt->bindValue(2, $photo_url, SQLITE3_TEXT);
-                    $photo_stmt->bindValue(3, $index, SQLITE3_INTEGER);
+                    $photo_stmt = $conn->prepare("INSERT INTO used_tire_photos (tire_id, photo_url, photo_order) VALUES (?, ?, ?)");
+                    $photo_stmt->bind_param("isi", $product_id, $photo_url, $index);
                     $photo_stmt->execute();
                 }
             } else {
                 // If changing from used to new, delete all photos
                 $delete_all_photos = "DELETE FROM used_tire_photos WHERE tire_id = ?";
                 $delete_stmt = $conn->prepare($delete_all_photos);
-                $delete_stmt->bindValue(1, $product_id, SQLITE3_INTEGER);
+                $delete_stmt->bind_param("i", $product_id);
                 $delete_stmt->execute();
             }
             
@@ -214,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: products.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     

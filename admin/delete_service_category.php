@@ -21,11 +21,10 @@ if ($category_id <= 0) {
 }
 
 // Check if category exists
-$category_query = "SELECT name FROM service_categories WHERE id = ?";
-$stmt = $conn->prepare($category_query);
-$stmt->bindValue(1, $category_id, SQLITE3_INTEGER);
-$category_result = $stmt->execute();
-$category = $category_result->fetchArray(SQLITE3_ASSOC);
+    $stmt = $conn->prepare("SELECT * FROM service_categories WHERE id = ?");
+    $stmt->bind_param("i", $category_id);
+    $category_result = $stmt->get_result();
+    $category = $category_result->fetch_assoc();
 
 if (!$category) {
     $_SESSION['error_message'] = 'Category not found';
@@ -34,11 +33,10 @@ if (!$category) {
 }
 
 // Check if category has any services
-$services_query = "SELECT COUNT(*) as count FROM services WHERE category = ?";
-$stmt = $conn->prepare($services_query);
-$stmt->bindValue(1, $category['name']);
-$services_result = $stmt->execute();
-$services_count = $services_result->fetchArray(SQLITE3_ASSOC)['count'];
+    $services_stmt = $conn->prepare("SELECT COUNT(*) as count FROM services WHERE category_id = ?");
+    $services_stmt->bind_param("i", $category['name']);
+    $services_result = $services_stmt->get_result();
+    $services_count = $services_result->fetch_assoc()['count'];
 
 if ($services_count > 0) {
     $_SESSION['error_message'] = 'Cannot delete category that has services. Please move or delete all services in this category first.';
@@ -47,14 +45,13 @@ if ($services_count > 0) {
 }
 
 // Delete the category
-$delete_query = "DELETE FROM service_categories WHERE id = ?";
-$stmt = $conn->prepare($delete_query);
-$stmt->bindValue(1, $category_id, SQLITE3_INTEGER);
+    $stmt = $conn->prepare("DELETE FROM service_categories WHERE id = ?");
+    $stmt->bind_param("i", $category_id);
 
 if ($stmt->execute()) {
     $_SESSION['success_message'] = 'Category "' . htmlspecialchars($category['name']) . '" deleted successfully';
 } else {
-    $_SESSION['error_message'] = 'Error deleting category: ' . $conn->lastErrorMsg();
+    $_SESSION['error_message'] = 'Error deleting category: ' . $conn->error();
 }
 
 header('Location: service_categories.php');

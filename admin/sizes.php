@@ -19,7 +19,7 @@ $sizes_query = "SELECT * FROM sizes ORDER BY sort_order ASC, name ASC";
 $sizes_result = $conn->query($sizes_query);
 
 $sizes = [];
-while ($row = $sizes_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $sizes_result->fetch_assoc()) {
     $sizes[] = $row;
 }
 

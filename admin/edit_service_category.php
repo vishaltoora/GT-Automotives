@@ -24,11 +24,10 @@ if ($category_id <= 0) {
 }
 
 // Get category data
-$category_query = "SELECT * FROM service_categories WHERE id = ?";
-$stmt = $conn->prepare($category_query);
-$stmt->bindValue(1, $category_id, SQLITE3_INTEGER);
-$category_result = $stmt->execute();
-$category = $category_result->fetchArray(SQLITE3_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM service_categories WHERE id = ?");
+$stmt->bind_param("i", $category_id);
+$result = $stmt->get_result();
+$category = $result->fetch_assoc();
 
 if (!$category) {
     $_SESSION['error_message'] = 'Category not found';
@@ -58,10 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if category name already exists (excluding current category)
     $check_query = "SELECT COUNT(*) as count FROM service_categories WHERE name = ? AND id != ?";
     $stmt = $conn->prepare($check_query);
-    $stmt->bindValue(1, $name);
-    $stmt->bindValue(2, $category_id, SQLITE3_INTEGER);
-    $result = $stmt->execute();
-    $count = $result->fetchArray(SQLITE3_ASSOC)['count'];
+    $stmt->bind_param("si", $name, $category_id);
+    $result = $stmt->get_result();
+    $count = $result->fetch_assoc()['count'];
     
     if ($count > 0) {
         $errors[] = 'Category name already exists';
@@ -69,14 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // If no errors, update the category
     if (empty($errors)) {
-        $query = "UPDATE service_categories SET name = ?, description = ?, icon = ?, sort_order = ? WHERE id = ?";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name);
-        $stmt->bindValue(2, $description);
-        $stmt->bindValue(3, $icon);
-        $stmt->bindValue(4, $sort_order, SQLITE3_INTEGER);
-        $stmt->bindValue(5, $category_id, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("UPDATE service_categories SET name = ?, description = ?, icon = ?, sort_order = ? WHERE id = ?");
+        $stmt->bind_param("sssi", $name, $description, $icon, $sort_order, $category_id);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -84,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: service_categories.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error;
         }
     }
     

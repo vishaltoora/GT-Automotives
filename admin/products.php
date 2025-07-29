@@ -27,14 +27,14 @@ $product_type_filter = isset($_GET['product_type']) ? $_GET['product_type'] : 'a
 $search_condition = '';
 
 if (!empty($search)) {
-    $escaped_search = SQLite3::escapeString($search);
+    $escaped_search = mysqli_real_escape_string($conn, $search);
     $search_condition .= "WHERE t.name LIKE '%$escaped_search%' 
                        OR t.size LIKE '%$escaped_search%' 
                        OR b.name LIKE '%$escaped_search%'";
 }
 
 if ($status_filter !== 'all') {
-    $escaped_status = SQLite3::escapeString($status_filter);
+    $escaped_status = mysqli_real_escape_string($conn, $status_filter);
     if (!empty($search_condition)) {
         $search_condition .= " AND t.`condition` = '$escaped_status'";
     } else {
@@ -43,7 +43,7 @@ if ($status_filter !== 'all') {
 }
 
 if ($location_filter !== 'all') {
-    $escaped_location = SQLite3::escapeString($location_filter);
+    $escaped_location = mysqli_real_escape_string($conn, $location_filter);
     if (!empty($search_condition)) {
         $search_condition .= " AND t.location_id = '$escaped_location'";
     } else {
@@ -52,7 +52,7 @@ if ($location_filter !== 'all') {
 }
 
 if ($product_type_filter !== 'all') {
-    $escaped_product_type = SQLite3::escapeString($product_type_filter);
+    $escaped_product_type = mysqli_real_escape_string($conn, $product_type_filter);
     if (!empty($search_condition)) {
         $search_condition .= " AND t.name = '$escaped_product_type'";
     } else {
@@ -63,7 +63,7 @@ if ($product_type_filter !== 'all') {
 // Get total products for pagination
 $total_query = "SELECT COUNT(*) as count FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition";
 $total_result = $conn->query($total_query);
-$total_products = $total_result->fetchArray(SQLITE3_ASSOC)['count'];
+$total_products = $total_result->fetch_assoc()['count'];
 $total_pages = ceil($total_products / $limit);
 
 // Get products for this page (with brand name and location)
@@ -73,7 +73,7 @@ $products_result = $conn->query($products_query);
 // Check if there are any products
 $has_products = false;
 $products_data = [];
-while ($product = $products_result->fetchArray(SQLITE3_ASSOC)) {
+while ($product = $products_result->fetch_assoc()) {
     $products_data[] = $product;
     $has_products = true;
 }
@@ -101,7 +101,7 @@ include_once 'includes/header.php';
                 <?php
                 $locations_query = "SELECT id, name FROM locations ORDER BY name";
                 $locations_result = $conn->query($locations_query);
-                while ($location = $locations_result->fetchArray(SQLITE3_ASSOC)) {
+                while ($location = $locations_result->fetch_assoc()) {
                     echo '<option value="' . htmlspecialchars($location['id']) . '"';
                     if ($location_filter === $location['id']) {
                         echo ' selected';

@@ -9,7 +9,7 @@ echo "<p><strong>Server Software:</strong> " . $_SERVER['SERVER_SOFTWARE'] . "</
 
 // Check required extensions
 echo "<h2>Required Extensions</h2>";
-$required_extensions = ['sqlite3', 'gd', 'fileinfo', 'zip'];
+$required_extensions = ['mysqli', 'gd', 'fileinfo', 'zip'];
 foreach ($required_extensions as $ext) {
     $status = extension_loaded($ext) ? "✅ Loaded" : "❌ Not Loaded";
     echo "<p><strong>$ext:</strong> $status</p>";
@@ -42,10 +42,10 @@ try {
     echo "<p>✅ Database connection successful</p>";
     
     // Test a simple query
-    $result = $conn->query("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'");
+    $result = $conn->query("SHOW TABLES");
     if ($result) {
-        $row = $result->fetchArray();
-        echo "<p>✅ Database has " . $row['count'] . " tables</p>";
+        $table_count = $result->num_rows;
+        echo "<p>✅ Database has " . $table_count . " tables</p>";
     } else {
         echo "<p>❌ Database query failed</p>";
     }

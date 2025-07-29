@@ -27,19 +27,19 @@ $param_types = [];
 if (!empty($search_name)) {
     $where_conditions[] = "s.customer_name LIKE ?";
     $params[] = '%' . $search_name . '%';
-    $param_types[] = SQLITE3_TEXT;
+    $param_types[] = 's';
 }
 
 if (!empty($date_from)) {
     $where_conditions[] = "DATE(s.created_at) >= ?";
     $params[] = $date_from;
-    $param_types[] = SQLITE3_TEXT;
+    $param_types[] = 's';
 }
 
 if (!empty($date_to)) {
     $where_conditions[] = "DATE(s.created_at) <= ?";
     $params[] = $date_to;
-    $param_types[] = SQLITE3_TEXT;
+    $param_types[] = 's';
 }
 
 $where_clause = '';
@@ -57,16 +57,16 @@ $sales_stmt = $conn->prepare($sales_query);
 
 // Bind parameters if any
 if (!empty($params)) {
-    for ($i = 0; $i < count($params); $i++) {
-        $sales_stmt->bindValue($i + 1, $params[$i], $param_types[$i]);
-    }
+    $types = implode('', $param_types);
+    $sales_stmt->bind_param($types, ...$params);
 }
 
-$sales_result = $sales_stmt->execute();
+$sales_stmt->execute();
+$sales_result = $sales_stmt->get_result();
 
 // Count rows for sales
 $sales_rows = [];
-while ($row = $sales_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $sales_result->fetch_assoc()) {
     $sales_rows[] = $row;
 }
 
@@ -82,22 +82,22 @@ include_once 'includes/header.php';
     // Get total sales count
     $total_sales_query = "SELECT COUNT(*) as count FROM sales";
     $total_sales_result = $conn->query($total_sales_query);
-    $total_sales = $total_sales_result->fetchArray(SQLITE3_ASSOC)['count'];
+    $total_sales = $total_sales_result->fetch_assoc()['count'];
     
     // Get total revenue
     $total_revenue_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'paid'";
     $total_revenue_result = $conn->query($total_revenue_query);
-    $total_revenue = $total_revenue_result->fetchArray(SQLITE3_ASSOC)['total'] ?? 0;
+    $total_revenue = $total_revenue_result->fetch_assoc()['total'] ?? 0;
     
     // Get pending payments
     $pending_payments_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'pending'";
     $pending_payments_result = $conn->query($pending_payments_query);
-    $pending_payments = $pending_payments_result->fetchArray(SQLITE3_ASSOC)['total'] ?? 0;
+    $pending_payments = $pending_payments_result->fetch_assoc()['total'] ?? 0;
     
     // Get total tax collected
     $total_tax_query = "SELECT SUM(gst_amount + pst_amount) as total FROM sales WHERE payment_status = 'paid'";
     $total_tax_result = $conn->query($total_tax_query);
-    $total_tax = $total_tax_result->fetchArray(SQLITE3_ASSOC)['total'] ?? 0;
+    $total_tax = $total_tax_result->fetch_assoc()['total'] ?? 0;
     ?>
     
     <div class="admin-card">

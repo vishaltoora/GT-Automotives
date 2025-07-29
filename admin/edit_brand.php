@@ -12,10 +12,11 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit;
 }
 $brand_id = intval($_GET['id']);
-$stmt = $conn->prepare('SELECT * FROM brands WHERE id = ?');
-$stmt->bindValue(1, $brand_id, SQLITE3_INTEGER);
-$result = $stmt->execute();
-$brand = $result->fetchArray(SQLITE3_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM brands WHERE id = ?");
+$stmt->bind_param("i", $brand_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$brand = $result->fetch_assoc();
 if (!$brand) {
     $_SESSION['error_message'] = 'Brand not found';
     header('Location: brands.php');
@@ -31,18 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Brand name is required';
     }
     if (empty($errors)) {
-        $stmt = $conn->prepare('UPDATE brands SET name = ?, description = ?, website = ?, logo_url = ? WHERE id = ?');
-        $stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $stmt->bindValue(2, $description, SQLITE3_TEXT);
-        $stmt->bindValue(3, $website, SQLITE3_TEXT);
-        $stmt->bindValue(4, $logo_url, SQLITE3_TEXT);
-        $stmt->bindValue(5, $brand_id, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("UPDATE brands SET name = ?, description = ?, website = ?, logo_url = ? WHERE id = ?");
+        $stmt->bind_param("ssssi", $name, $description, $website, $logo_url, $brand_id);
         if ($stmt->execute()) {
             $_SESSION['success_message'] = 'Brand updated successfully';
             header('Location: brands.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     if (!empty($errors)) {

@@ -43,25 +43,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Check if size name already exists
     if (empty($errors)) {
-        $check_query = "SELECT COUNT(*) as count FROM sizes WHERE name = ?";
-        $check_stmt = $conn->prepare($check_query);
-        $check_stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $check_result = $check_stmt->execute();
-        $count = $check_result->fetchArray(SQLITE3_ASSOC)['count'];
+        $check_stmt = $conn->prepare("SELECT COUNT(*) as count FROM sizes WHERE name = ?");
+        $check_stmt->bind_param("s", $name);
+        $check_result = $check_stmt->get_result();
+        $existing_count = $check_result->fetch_assoc()['count'];
         
-        if ($count > 0) {
+        if ($existing_count > 0) {
             $errors[] = 'A size with this name already exists';
         }
     }
     
     if (empty($errors)) {
-        $query = "INSERT INTO sizes (name, description, is_active, sort_order) VALUES (?, ?, ?, ?)";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bindValue(1, $name, SQLITE3_TEXT);
-        $stmt->bindValue(2, $description, SQLITE3_TEXT);
-        $stmt->bindValue(3, $is_active, SQLITE3_INTEGER);
-        $stmt->bindValue(4, $sort_order, SQLITE3_INTEGER);
+        $stmt = $conn->prepare("INSERT INTO sizes (name, description, is_active, sort_order) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssii", $name, $description, $is_active, $sort_order);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -69,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: sizes.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->lastErrorMsg();
+            $errors[] = 'Database error: ' . $conn->error();
         }
     }
     

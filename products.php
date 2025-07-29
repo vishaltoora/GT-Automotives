@@ -2,6 +2,9 @@
 // Include error handler for debugging
 require_once 'includes/error_handler.php';
 
+// Include database connection first
+require_once 'includes/db_connect.php';
+
 // Enable debugging if requested
 if (isset($_GET['debug'])) {
     echo "<div style='background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; margin: 10px; border-radius: 4px;'>";
@@ -14,7 +17,7 @@ if (isset($_GET['debug'])) {
 
 // Test database connection
 try {
-    $conn = testDatabaseConnection();
+    $db_status = testDatabaseConnection();
     echo isset($_GET['debug']) ? "<div style='background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; margin: 10px; border-radius: 4px;'>✅ Database connection successful</div>" : "";
 } catch (Exception $e) {
     echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
@@ -40,9 +43,6 @@ try {
     echo "</div>";
 }
 
-// Include database connection
-require_once 'includes/db_connect.php';
-
 // Filters for products
 $brand_filter = isset($_GET['brand']) ? trim($_GET['brand']) : '';
 $size_filter = isset($_GET['size']) ? trim($_GET['size']) : '';
@@ -53,15 +53,15 @@ $where_conditions = [];
 $params = [];
 
 if (!empty($brand_filter)) {
-    $where_conditions[] = "b.name = '" . SQLite3::escapeString($brand_filter) . "'";
+    $where_conditions[] = "b.name = '" . mysqli_real_escape_string($conn, $brand_filter) . "'";
 }
 
 if (!empty($size_filter)) {
-    $where_conditions[] = "t.size = '" . SQLite3::escapeString($size_filter) . "'";
+    $where_conditions[] = "t.size = '" . mysqli_real_escape_string($conn, $size_filter) . "'";
 }
 
 if (!empty($search_filter)) {
-    $escaped_search = SQLite3::escapeString($search_filter);
+    $escaped_search = mysqli_real_escape_string($conn, $search_filter);
     $where_conditions[] = "(t.name LIKE '%$escaped_search%' OR t.description LIKE '%$escaped_search%')";
 }
 
@@ -276,7 +276,7 @@ $sizes_result = $conn->query($sizes_query);
                         <label for="brand">Brand</label>
                         <select name="brand" id="brand">
                             <option value="">All Brands</option>
-                            <?php while ($brand = $brands_result->fetchArray(SQLITE3_ASSOC)): ?>
+                            <?php while ($brand = $brands_result->fetch_assoc()): ?>
                                 <option value="<?php echo htmlspecialchars($brand['brand']); ?>" <?php echo $brand_filter === $brand['brand'] ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($brand['brand']); ?>
                                 </option>
@@ -287,7 +287,7 @@ $sizes_result = $conn->query($sizes_query);
                         <label for="size">Size</label>
                         <select name="size" id="size">
                             <option value="">All Sizes</option>
-                            <?php while ($size = $sizes_result->fetchArray(SQLITE3_ASSOC)): ?>
+                            <?php while ($size = $sizes_result->fetch_assoc()): ?>
                                 <option value="<?php echo htmlspecialchars($size['size']); ?>" <?php echo $size_filter === $size['size'] ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($size['size']); ?>
                                 </option>
@@ -328,16 +328,11 @@ $sizes_result = $conn->query($sizes_query);
         <!-- Products Grid -->
         <div class="products-grid">
             <?php 
-            // Count rows manually for SQLite3
-            $row_count = 0;
-            $result->reset();
-            while ($result->fetchArray()) {
-                $row_count++;
-            }
-            $result->reset();
+            // Count rows for MySQL
+            $row_count = $result->num_rows;
             ?>
             <?php if ($row_count > 0): ?>
-                <?php while ($product = $result->fetchArray(SQLITE3_ASSOC)): ?>
+                <?php while ($product = $result->fetch_assoc()): ?>
                     <div class="product-card">
                         <div class="product-image">
                             <div class="emoji-container">

@@ -24,12 +24,12 @@ function requireLogin() {
 
 // Function to verify admin credentials
 function verifyAdminCredentials($username, $password, $conn) {
-    $escaped_username = SQLite3::escapeString($username);
-    $query = "SELECT id, username, password FROM users WHERE username = '$escaped_username' AND is_admin = 1 LIMIT 1";
-    
+    // Check if user exists and password is correct
+    $escaped_username = mysqli_real_escape_string($conn, $username);
+    $query = "SELECT * FROM users WHERE username = '$escaped_username'";
     $result = $conn->query($query);
     
-    if ($result && $row = $result->fetchArray(SQLITE3_ASSOC)) {
+    if ($result && $row = $result->fetch_assoc()) {
         // Verify password
         if (password_verify($password, $row['password'])) {
             return $row;

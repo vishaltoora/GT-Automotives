@@ -61,40 +61,40 @@ $stats = [];
 // Product statistics
 $product_count_query = "SELECT COUNT(*) as count FROM tires";
 $product_count_result = $conn->query($product_count_query);
-$stats['total_products'] = $product_count_result->fetchArray(SQLITE3_ASSOC)['count'];
+$stats['total_products'] = $product_count_result->fetch_assoc()['count'];
 
 // Inventory value
-$inventory_value_query = "SELECT SUM(price * stock_quantity) as total_value FROM tires";
+$inventory_value_query = "SELECT SUM(price * stock_quantity) as total_value FROM tires WHERE stock_quantity > 0";
 $inventory_value_result = $conn->query($inventory_value_query);
-$stats['inventory_value'] = $inventory_value_result->fetchArray(SQLITE3_ASSOC)['total_value'] ?? 0;
+$stats['inventory_value'] = $inventory_value_result->fetch_assoc()['total_value'] ?? 0;
 
 // Sales statistics
 $total_sales_query = "SELECT COUNT(*) as count FROM sales";
 $total_sales_result = $conn->query($total_sales_query);
-$stats['total_sales'] = $total_sales_result->fetchArray(SQLITE3_ASSOC)['count'];
+$stats['total_sales'] = $total_sales_result->fetch_assoc()['count'];
 
 // Revenue statistics
 $total_revenue_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'paid'";
 $total_revenue_result = $conn->query($total_revenue_query);
-$stats['total_revenue'] = $total_revenue_result->fetchArray(SQLITE3_ASSOC)['total'] ?? 0;
+$stats['total_revenue'] = $total_revenue_result->fetch_assoc()['total'] ?? 0;
 
 // Pending payments
 $pending_payments_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'pending'";
 $pending_payments_result = $conn->query($pending_payments_query);
-$stats['pending_payments'] = $pending_payments_result->fetchArray(SQLITE3_ASSOC)['total'] ?? 0;
+$stats['pending_payments'] = $pending_payments_result->fetch_assoc()['total'] ?? 0;
 
 // Low stock products (less than 10 items)
-$low_stock_query = "SELECT COUNT(*) as count FROM tires WHERE stock_quantity < 10";
+$low_stock_query = "SELECT COUNT(*) as count FROM tires WHERE stock_quantity > 0 AND stock_quantity <= 5";
 $low_stock_result = $conn->query($low_stock_query);
-$stats['low_stock_products'] = $low_stock_result->fetchArray(SQLITE3_ASSOC)['count'];
+$stats['low_stock_products'] = $low_stock_result->fetch_assoc()['count'];
 
 // Recent products (with brand name)
-$recent_products_query = "SELECT t.*, b.name as brand_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id ORDER BY t.created_at DESC LIMIT 5";
+$recent_products_query = "SELECT t.*, b.name as brand_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id ORDER BY t.id DESC LIMIT 5";
 $recent_products_result = $conn->query($recent_products_query);
 
 // Count rows for recent products
 $recent_products_rows = [];
-while ($row = $recent_products_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $recent_products_result->fetch_assoc()) {
     $recent_products_rows[] = $row;
 }
 
@@ -106,23 +106,16 @@ $recent_sales_result = $conn->query($recent_sales_query);
 
 // Count rows for recent sales
 $recent_sales_rows = [];
-while ($row = $recent_sales_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $recent_sales_result->fetch_assoc()) {
     $recent_sales_rows[] = $row;
 }
 
 // Monthly revenue for chart (last 6 months)
-$monthly_revenue_query = "SELECT 
-                            strftime('%Y-%m', created_at) as month,
-                            SUM(total_amount) as revenue
-                          FROM sales 
-                          WHERE payment_status = 'paid' 
-                          AND created_at >= date('now', '-6 months')
-                          GROUP BY strftime('%Y-%m', created_at)
-                          ORDER BY month DESC";
+$monthly_revenue_query = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(total_amount) as revenue FROM sales WHERE payment_status = 'paid' GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month DESC LIMIT 12";
 $monthly_revenue_result = $conn->query($monthly_revenue_query);
 
 $monthly_revenue = [];
-while ($row = $monthly_revenue_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $monthly_revenue_result->fetch_assoc()) {
     $monthly_revenue[] = $row;
 }
 

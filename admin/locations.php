@@ -27,7 +27,7 @@ include_once 'includes/header.php';
     </a>
 </div>
 
-<?php if ($result->numColumns() > 0): ?>
+<?php if ($result->num_rows > 0): ?>
     <table class="admin-table">
         <thead>
             <tr>
@@ -39,7 +39,7 @@ include_once 'includes/header.php';
             </tr>
         </thead>
         <tbody>
-            <?php while ($location = $result->fetchArray(SQLITE3_ASSOC)): ?>
+            <?php while ($location = $result->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $location['id']; ?></td>
                     <td>

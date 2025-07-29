@@ -24,9 +24,10 @@ $sale_query = "SELECT s.*, u.username as created_by_name FROM sales s
                LEFT JOIN users u ON s.created_by = u.id 
                WHERE s.id = ?";
 $sale_stmt = $conn->prepare($sale_query);
-$sale_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
-$sale_result = $sale_stmt->execute();
-$sale = $sale_result->fetchArray(SQLITE3_ASSOC);
+$sale_stmt->bind_param("i", $sale_id);
+$sale_stmt->execute();
+$sale_result = $sale_stmt->get_result();
+$sale = $sale_result->fetch_assoc();
 
 if (!$sale) {
     header('Location: sales.php');
@@ -44,11 +45,12 @@ $items_query = "SELECT si.*,
                 LEFT JOIN service_categories sc ON s.category = sc.name 
                 WHERE si.sale_id = ?";
 $items_stmt = $conn->prepare($items_query);
-$items_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
-$items_result = $items_stmt->execute();
+$items_stmt->bind_param("i", $sale_id);
+$items_stmt->execute();
+$items_result = $items_stmt->get_result();
 
 $sale_items = [];
-while ($row = $items_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $items_result->fetch_assoc()) {
     $sale_items[] = $row;
 }
 

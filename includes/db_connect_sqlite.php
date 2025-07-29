@@ -1,33 +1,38 @@
 <?php
-// MySQL Database configuration
-$host = 'localhost';
-$dbname = 'gt_automotives';
-$username = 'gtadmin';
-$password = 'Vishal@1234#'; // Change this to your actual password
+// SQLite Database configuration for local development
+$db_path = __DIR__ . '/../database/gt_automotives.db';
 
-// Create MySQL connection
+// Create database directory if it doesn't exist
+$db_dir = dirname($db_path);
+if (!is_dir($db_dir)) {
+    mkdir($db_dir, 0755, true);
+}
+
+// Create SQLite connection
 try {
-    $conn = new mysqli($host, $username, $password, $dbname);
+    $conn = new SQLite3($db_path);
     
-    // Check connection
-    if ($conn->connect_error) {
-        throw new Exception("Connection failed: " . $conn->connect_error);
-    }
+    // Enable foreign keys
+    $conn->exec('PRAGMA foreign_keys = ON');
     
-    // Set charset to utf8
-    $conn->set_charset("utf8");
+    // Set busy timeout
+    $conn->busyTimeout(5000);
     
 } catch (Exception $e) {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// MySQL wrapper functions to maintain compatibility with existing code
+// SQLite wrapper functions to maintain compatibility with existing code
 function sqlite_prepare($conn, $query) {
     return $conn->prepare($query);
 }
 
 function sqlite_bind_param($stmt, $types, ...$params) {
-    return $stmt->bind_param($types, ...$params);
+    // SQLite3 doesn't use type hints like MySQL, so we'll bind by position
+    for ($i = 0; $i < count($params); $i++) {
+        $stmt->bindValue($i + 1, $params[$i]);
+    }
+    return true;
 }
 
 function sqlite_execute($stmt) {
@@ -35,15 +40,17 @@ function sqlite_execute($stmt) {
 }
 
 function sqlite_get_result($stmt) {
-    return $stmt->get_result();
+    return $stmt;
 }
 
 function sqlite_fetch_assoc($result) {
-    return $result->fetch_assoc();
+    return $result->fetchArray(SQLITE3_ASSOC);
 }
 
 function sqlite_num_rows($result) {
-    return $result->num_rows;
+    // SQLite3 doesn't have a direct num_rows method
+    // We'll need to count manually if needed
+    return 0; // Placeholder
 }
 
 function sqlite_query($conn, $query) {
@@ -51,14 +58,14 @@ function sqlite_query($conn, $query) {
 }
 
 function sqlite_escape_string($conn, $string) {
-    return $conn->real_escape_string($string);
+    return SQLite3::escapeString($string);
 }
 
 function sqlite_error($conn) {
-    return "MySQL error: " . $conn->error;
+    return "SQLite error: " . $conn->lastErrorMsg();
 }
 
-// Override MySQLi functions with our wrappers only if they don't exist
+// Override MySQLi functions with our wrappers
 if (!function_exists('mysqli_prepare')) {
     function mysqli_prepare($conn, $query) {
         return sqlite_prepare($conn, $query);
@@ -109,8 +116,7 @@ if (!function_exists('mysqli_real_escape_string')) {
 
 if (!function_exists('mysqli_connect_error')) {
     function mysqli_connect_error() {
-        return "MySQL connection error";
+        return "SQLite connection error";
     }
 }
-
-?>
+?> 

@@ -20,11 +20,10 @@ if (!$sale_id) {
 }
 
 // Get sale details
-$sale_query = "SELECT * FROM sales WHERE id = ?";
-$sale_stmt = $conn->prepare($sale_query);
-$sale_stmt->bindValue(1, $sale_id, SQLITE3_INTEGER);
-$sale_result = $sale_stmt->execute();
-$sale = $sale_result->fetchArray(SQLITE3_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM sales WHERE id = ?");
+$stmt->bind_param("i", $sale_id);
+$result = $stmt->get_result();
+$sale = $result->fetch_assoc();
 
 if (!$sale) {
     $_SESSION['error_message'] = 'Sale not found.';
@@ -40,19 +39,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Delete sale items first (due to foreign key constraint)
         $delete_items = $conn->prepare("DELETE FROM sale_items WHERE sale_id = ?");
-        $delete_items->bindValue(1, $sale_id, SQLITE3_INTEGER);
+        $delete_items->bind_param("i", $sale_id);
         $delete_items->execute();
         
         // Delete the sale
-        $delete_sale = $conn->prepare("DELETE FROM sales WHERE id = ?");
-        $delete_sale->bindValue(1, $sale_id, SQLITE3_INTEGER);
-        $delete_sale->execute();
+        $stmt = $conn->prepare("DELETE FROM sales WHERE id = ?");
+        $stmt->bind_param("i", $sale_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['success_message'] = 'Sale deleted successfully';
+        } else {
+            $_SESSION['error_message'] = 'Error deleting sale: ' . $conn->error;
+        }
         
         // Commit transaction
         $conn->exec('COMMIT');
         
-        // Set success message and redirect
-        $_SESSION['success_message'] = 'Sale deleted successfully!';
         header('Location: sales.php');
         exit;
         

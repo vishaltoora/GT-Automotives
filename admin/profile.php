@@ -21,11 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     $confirm_password = $_POST['confirm_password'] ?? '';
     
     // Validate current password
-    $user_query = "SELECT password FROM users WHERE username = ?";
-    $user_stmt = $conn->prepare($user_query);
-    $user_stmt->bindValue(1, $_SESSION['admin_username'], SQLITE3_TEXT);
-    $user_result = $user_stmt->execute();
-    $user = $user_result->fetchArray(SQLITE3_ASSOC);
+    $validate_stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+    $validate_stmt->bind_param("s", $_SESSION['admin_username']);
+    $validate_result = $validate_stmt->get_result();
+    $user = $validate_result->fetch_assoc();
+    $validate_stmt->close();
     
     if (!$user || !password_verify($current_password, $user['password'])) {
         $_SESSION['error_message'] = 'Current password is incorrect.';
@@ -36,16 +36,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     } else {
         // Update password
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-        $update_query = "UPDATE users SET password = ? WHERE username = ?";
-        $update_stmt = $conn->prepare($update_query);
-        $update_stmt->bindValue(1, $hashed_password, SQLITE3_TEXT);
-        $update_stmt->bindValue(2, $_SESSION['admin_username'], SQLITE3_TEXT);
+        $update_stmt = $conn->prepare("UPDATE users SET password = ? WHERE username = ?");
+        $update_stmt->bind_param("ss", $hashed_password, $_SESSION['admin_username']);
         
         if ($update_stmt->execute()) {
             $_SESSION['success_message'] = 'Password updated successfully!';
         } else {
             $_SESSION['error_message'] = 'Failed to update password. Please try again.';
         }
+        $update_stmt->close();
     }
     
     // Redirect to prevent form resubmission
@@ -61,11 +60,12 @@ if (isset($_GET['logout'])) {
 }
 
 // Get user information
-$user_query = "SELECT username, created_at FROM users WHERE username = ?";
-$user_stmt = $conn->prepare($user_query);
-$user_stmt->bindValue(1, $_SESSION['admin_username'], SQLITE3_TEXT);
-$user_result = $user_stmt->execute();
-$user_info = $user_result->fetchArray(SQLITE3_ASSOC);
+$user_stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+$user_stmt->bind_param("s", $_SESSION['admin_username']);
+$user_stmt->execute();
+$user_result = $user_stmt->get_result();
+$user_info = $user_result->fetch_assoc();
+$user_stmt->close();
 
 // Include header
 include_once 'includes/header.php';

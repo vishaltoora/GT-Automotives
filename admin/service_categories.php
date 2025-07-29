@@ -36,7 +36,7 @@ include_once 'includes/header.php';
     </div>
 </div>
 
-<?php if ($categories_result->numColumns() > 0): ?>
+<?php if ($categories_result->num_rows > 0): ?>
     <table class="admin-table">
         <thead>
             <tr>
@@ -50,7 +50,7 @@ include_once 'includes/header.php';
             </tr>
         </thead>
         <tbody>
-            <?php while ($category = $categories_result->fetchArray(SQLITE3_ASSOC)): ?>
+            <?php while ($category = $categories_result->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $category['id']; ?></td>
                     <td>

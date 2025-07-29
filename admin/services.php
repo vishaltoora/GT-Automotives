@@ -40,43 +40,37 @@ if (!empty($category_filter)) {
 
 // Get total services for pagination
 $total_query = "SELECT COUNT(*) as count FROM services s $search_condition";
-$stmt = $conn->prepare($total_query);
+$total_stmt = $conn->prepare($total_query);
 if (!empty($params)) {
-    $stmt->bindValue(1, $params[0]);
-    if (count($params) > 1) {
-        $stmt->bindValue(2, $params[1]);
-    }
-    if (count($params) > 2) {
-        $stmt->bindValue(3, $params[2]);
-    }
+    $types = str_repeat('s', count($params));
+    $total_stmt->bind_param($types, ...$params);
 }
-$total_result = $stmt->execute();
-$total_services = $total_result->fetchArray(SQLITE3_ASSOC)['count'];
+$total_stmt->execute();
+$total_result = $total_stmt->get_result();
+$total_services = $total_result->fetch_assoc()['count'];
 $total_pages = ceil($total_services / $limit);
+$total_stmt->close();
 
 // Get services for this page
 $services_query = "SELECT s.*, sc.name as category_name FROM services s 
                    LEFT JOIN service_categories sc ON s.category = sc.name 
                    $search_condition ORDER BY s.category, s.name LIMIT ?, ?";
-$stmt = $conn->prepare($services_query);
-$stmt->bindValue(1, $start, SQLITE3_INTEGER);
-$stmt->bindValue(2, $limit, SQLITE3_INTEGER);
+$services_stmt = $conn->prepare($services_query);
 if (!empty($params)) {
-    $stmt->bindValue(3, $params[0]);
-    if (count($params) > 1) {
-        $stmt->bindValue(4, $params[1]);
-    }
-    if (count($params) > 2) {
-        $stmt->bindValue(5, $params[2]);
-    }
+    $types = "ii" . str_repeat('s', count($params));
+    $services_stmt->bind_param($types, $start, $limit, ...$params);
+} else {
+    $services_stmt->bind_param("ii", $start, $limit);
 }
-$services_result = $stmt->execute();
+$services_stmt->execute();
+$services_result = $services_stmt->get_result();
+$services_stmt->close();
 
 // Get categories for filter dropdown
-$categories_query = "SELECT DISTINCT name FROM service_categories ORDER BY sort_order, name";
+$categories_query = "SELECT DISTINCT name, sort_order FROM service_categories ORDER BY sort_order, name";
 $categories_result = $conn->query($categories_query);
 $categories = [];
-while ($row = $categories_result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = $categories_result->fetch_assoc()) {
     $categories[] = $row['name'];
 }
 
@@ -120,7 +114,7 @@ include_once 'includes/header.php';
     </div>
 </div>
 
-<?php if ($services_result->numColumns() > 0): ?>
+<?php if ($services_result->num_rows > 0): ?>
     <table class="admin-table">
         <thead>
             <tr>
@@ -134,7 +128,7 @@ include_once 'includes/header.php';
             </tr>
         </thead>
         <tbody>
-            <?php while ($service = $services_result->fetchArray(SQLITE3_ASSOC)): ?>
+            <?php while ($service = $services_result->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $service['id']; ?></td>
                     <td>
