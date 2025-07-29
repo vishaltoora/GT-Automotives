@@ -125,25 +125,45 @@ CREATE TABLE IF NOT EXISTS sale_items (
     FOREIGN KEY (tire_id) REFERENCES tires(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Create services table
-CREATE TABLE IF NOT EXISTS services (
+-- Create service_categories table
+CREATE TABLE IF NOT EXISTS service_categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
-    price DECIMAL(10,2) NOT NULL,
-    duration_minutes INT DEFAULT 60,
+    sort_order INT DEFAULT 0,
     is_active TINYINT(1) DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Insert sample services
-INSERT INTO services (name, description, price, duration_minutes) VALUES
-('Tire Installation', 'Professional tire mounting and balancing service', 25.00, 30),
-('Wheel Alignment', 'Complete wheel alignment service', 75.00, 60),
-('Tire Rotation', 'Tire rotation and balance service', 35.00, 45),
-('Tire Repair', 'Puncture repair and patch service', 15.00, 20),
-('Tire Pressure Check', 'Comprehensive tire pressure inspection', 10.00, 15);
+-- Insert sample service categories
+INSERT INTO service_categories (name, description, sort_order) VALUES
+('Installation', 'Tire installation and mounting services', 1),
+('Maintenance', 'Regular tire maintenance services', 2),
+('Repair', 'Tire repair and emergency services', 3),
+('Inspection', 'Tire inspection and safety checks', 4);
+
+-- Create services table (updated to include category)
+CREATE TABLE IF NOT EXISTS services (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(255) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    duration_minutes INT DEFAULT 60,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category) REFERENCES service_categories(name) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert sample services with categories
+INSERT INTO services (name, description, category, price, duration_minutes) VALUES
+('Tire Installation', 'Professional tire mounting and balancing service', 'Installation', 25.00, 30),
+('Wheel Alignment', 'Complete wheel alignment service', 'Maintenance', 75.00, 60),
+('Tire Rotation', 'Tire rotation and balance service', 'Maintenance', 35.00, 45),
+('Tire Repair', 'Puncture repair and patch service', 'Repair', 15.00, 20),
+('Tire Pressure Check', 'Comprehensive tire pressure inspection', 'Inspection', 10.00, 15);
 
 -- Create locations table
 CREATE TABLE IF NOT EXISTS locations (
