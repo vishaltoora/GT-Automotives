@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Use emoji for image_url as we're using emojis instead of actual images
         $image_url = 'images/tire-emoji.png';
         
-        $query = "INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, condition, location_id) 
+        $query = "INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_quantity, `condition`, location_id) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($query);

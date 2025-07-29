@@ -162,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // If no errors, update the product
     if (empty($errors)) {
-        $stmt = $conn->prepare("UPDATE tires SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, condition = ?, location_id = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE tires SET brand_id = ?, name = ?, size = ?, price = ?, description = ?, stock_quantity = ?, `condition` = ?, location_id = ? WHERE id = ?");
         $stmt->bind_param("issdsisi", $brand_id, $product_type, $size, $price, $description, $stock_quantity, $condition, $location_id, $product_id);
         
         if ($stmt->execute()) {
