@@ -112,4 +112,5 @@ if (!function_exists('mysqli_connect_error')) {
         return "MySQL connection error";
     }
 }
-?> 
+
+?>
