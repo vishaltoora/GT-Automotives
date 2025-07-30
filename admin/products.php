@@ -58,7 +58,6 @@ try {
     // Search filter
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
-    $location_filter = isset($_GET['location']) ? $_GET['location'] : 'all';
     $product_type_filter = isset($_GET['product_type']) ? $_GET['product_type'] : 'all';
     $search_condition = '';
 
@@ -78,15 +77,6 @@ try {
         }
     }
 
-    if ($location_filter !== 'all') {
-        $escaped_location = mysqli_real_escape_string($conn, $location_filter);
-        if (!empty($search_condition)) {
-            $search_condition .= " AND t.location_id = '$escaped_location'";
-        } else {
-            $search_condition = "WHERE t.location_id = '$escaped_location'";
-        }
-    }
-
     if ($product_type_filter !== 'all') {
         $escaped_product_type = mysqli_real_escape_string($conn, $product_type_filter);
         if (!empty($search_condition)) {
@@ -98,7 +88,7 @@ try {
 
     // Get total products for pagination
     if (isset($conn)) {
-        $total_query = "SELECT COUNT(*) as count FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition";
+        $total_query = "SELECT COUNT(*) as count FROM tires t LEFT JOIN brands b ON t.brand_id = b.id $search_condition";
         $total_result = $conn->query($total_query);
         
         if (!$total_result) {
@@ -112,8 +102,8 @@ try {
         
         $total_pages = ceil($total_products / $limit);
 
-        // Get products for this page (with brand name and location)
-        $products_query = "SELECT t.*, b.name as brand_name, l.name as location_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition ORDER BY t.id DESC LIMIT $start, $limit";
+        // Get products for this page (with brand name only)
+        $products_query = "SELECT t.*, b.name as brand_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id $search_condition ORDER BY t.id DESC LIMIT $start, $limit";
         $products_result = $conn->query($products_query);
         
         if (!$products_result) {
@@ -162,26 +152,6 @@ if (file_exists('includes/header.php')) {
             </select>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
-            <select name="location" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
-                <option value="all" <?php echo $location_filter === 'all' ? 'selected' : ''; ?>>All Locations</option>
-                <?php
-                if (isset($conn)) {
-                    $locations_query = "SELECT id, name FROM locations ORDER BY name";
-                    $locations_result = $conn->query($locations_query);
-                    if ($locations_result) {
-                        while ($location = $locations_result->fetch_assoc()) {
-                            echo '<option value="' . htmlspecialchars($location['id']) . '"';
-                            if ($location_filter === $location['id']) {
-                                echo ' selected';
-                            }
-                            echo '>' . htmlspecialchars($location['name']) . '</option>';
-                        }
-                    }
-                }
-                ?>
-            </select>
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
             <select name="product_type" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
                 <option value="all" <?php echo $product_type_filter === 'all' ? 'selected' : ''; ?>>All Product Types</option>
                 <option value="Winter Tires" <?php echo $product_type_filter === 'Winter Tires' ? 'selected' : ''; ?>>❄️ Winter Tires</option>
@@ -191,7 +161,7 @@ if (file_exists('includes/header.php')) {
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Search</button>
-        <?php if (!empty($search) || $status_filter !== 'all' || $location_filter !== 'all' || $product_type_filter !== 'all'): ?>
+        <?php if (!empty($search) || $status_filter !== 'all' || $product_type_filter !== 'all'): ?>
             <a href="products.php" class="btn btn-secondary">Clear</a>
         <?php endif; ?>
     </form>
@@ -220,7 +190,6 @@ if (file_exists('includes/header.php')) {
                 <th>Size</th>
                 <th>Price</th>
                 <th>Stock</th>
-                <th>Location</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -266,11 +235,6 @@ if (file_exists('includes/header.php')) {
                     <td>$<?php echo number_format($product['price'] ?? 0, 2); ?></td>
                     <td><?php echo $product['stock_quantity'] ?? 0; ?></td>
                     <td>
-                        <span class="location-badge">
-                            <?php echo htmlspecialchars($product['location_name'] ?? 'Unknown'); ?>
-                        </span>
-                    </td>
-                    <td>
                         <?php 
                         $status = $product['condition'] ?? 'new';
                         $status_class = $status === 'new' ? 'status-new' : 'status-used';
@@ -302,19 +266,19 @@ if (file_exists('includes/header.php')) {
     <?php if ($total_pages > 1): ?>
         <div class="pagination" style="margin-top: 2rem; text-align: center;">
             <?php if ($page > 1): ?>
-                <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&location=<?php echo urlencode($location_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary">Previous</a>
+                <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary">Previous</a>
             <?php endif; ?>
             
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                 <?php if ($i == $page): ?>
                     <span class="btn btn-primary"><?php echo $i; ?></span>
                 <?php else: ?>
-                    <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&location=<?php echo urlencode($location_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary"><?php echo $i; ?></a>
+                    <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary"><?php echo $i; ?></a>
                 <?php endif; ?>
             <?php endfor; ?>
             
             <?php if ($page < $total_pages): ?>
-                <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&location=<?php echo urlencode($location_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary">Next</a>
+                <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary">Next</a>
             <?php endif; ?>
         </div>
     <?php endif; ?>
