@@ -106,22 +106,50 @@ if (file_exists('includes/header.php')) {
                 </div>
                 
                 <div class="location-details">
+                    <?php if (!empty($location['description'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span><?php echo htmlspecialchars($location['description']); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    
                     <div class="detail-item">
                         <i class="fas fa-map-marker-alt"></i>
                         <span><?php echo htmlspecialchars($location['address']); ?></span>
                     </div>
                     
-                    <?php if (!empty($location['phone'])): ?>
+                    <?php if (!empty($location['contact_person'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-user"></i>
+                            <span><?php echo htmlspecialchars($location['contact_person']); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($location['contact_phone'])): ?>
                         <div class="detail-item">
                             <i class="fas fa-phone"></i>
-                            <span><?php echo htmlspecialchars($location['phone']); ?></span>
+                            <span><?php echo htmlspecialchars($location['contact_phone']); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($location['contact_email'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <span><?php echo htmlspecialchars($location['contact_email']); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($location['phone'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-phone-alt"></i>
+                            <span>General: <?php echo htmlspecialchars($location['phone']); ?></span>
                         </div>
                     <?php endif; ?>
                     
                     <?php if (!empty($location['email'])): ?>
                         <div class="detail-item">
-                            <i class="fas fa-envelope"></i>
-                            <span><?php echo htmlspecialchars($location['email']); ?></span>
+                            <i class="fas fa-envelope-open"></i>
+                            <span>General: <?php echo htmlspecialchars($location['email']); ?></span>
                         </div>
                     <?php endif; ?>
                     

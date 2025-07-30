@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($errors)) {
         $stmt = $conn->prepare("UPDATE sizes SET name = ?, description = ?, is_active = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-        $stmt->bind_param("ssiis", $name, $description, $is_active, $sort_order, $size_id);
+        $stmt->bind_param("ssiii", $name, $description, $is_active, $sort_order, $size_id);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: sizes.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->error();
+            $errors[] = 'Database error: ' . $conn->error;
         }
     }
     

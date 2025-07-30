@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: locations.php');
             exit;
         } else {
-            $errors[] = 'Database error: ' . $conn->error();
+            $errors[] = 'Database error: ' . $conn->error;
         }
     }
     
