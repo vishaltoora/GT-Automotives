@@ -1,85 +1,147 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Include database connection
-require_once '../includes/db_connect.php';
-require_once '../includes/auth.php';
+// Start output buffering to catch any early errors
+ob_start();
 
-// Require login
-requireLogin();
-
-// Set page title
-$page_title = 'Manage Products';
-
-// Pagination settings
-$limit = 10;
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$start = ($page - 1) * $limit;
-
-// Search filter
-$search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
-$location_filter = isset($_GET['location']) ? $_GET['location'] : 'all';
-$product_type_filter = isset($_GET['product_type']) ? $_GET['product_type'] : 'all';
-$search_condition = '';
-
-if (!empty($search)) {
-    $escaped_search = mysqli_real_escape_string($conn, $search);
-    $search_condition .= "WHERE t.name LIKE '%$escaped_search%' 
-                       OR t.size LIKE '%$escaped_search%' 
-                       OR b.name LIKE '%$escaped_search%'";
-}
-
-if ($status_filter !== 'all') {
-    $escaped_status = mysqli_real_escape_string($conn, $status_filter);
-    if (!empty($search_condition)) {
-        $search_condition .= " AND t.`condition` = '$escaped_status'";
+try {
+    // Include database connection
+    if (file_exists('../includes/db_connect.php')) {
+        require_once '../includes/db_connect.php';
     } else {
-        $search_condition = "WHERE t.`condition` = '$escaped_status'";
+        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+        echo "<strong>Error:</strong> db_connect.php not found";
+        echo "</div>";
     }
-}
 
-if ($location_filter !== 'all') {
-    $escaped_location = mysqli_real_escape_string($conn, $location_filter);
-    if (!empty($search_condition)) {
-        $search_condition .= " AND t.location_id = '$escaped_location'";
+    if (file_exists('../includes/auth.php')) {
+        require_once '../includes/auth.php';
     } else {
-        $search_condition = "WHERE t.location_id = '$escaped_location'";
+        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+        echo "<strong>Error:</strong> auth.php not found";
+        echo "</div>";
     }
-}
 
-if ($product_type_filter !== 'all') {
-    $escaped_product_type = mysqli_real_escape_string($conn, $product_type_filter);
-    if (!empty($search_condition)) {
-        $search_condition .= " AND t.name = '$escaped_product_type'";
+    // Test database connection
+    if (isset($conn) && !$conn->connect_error) {
+        echo "<div style='background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; margin: 10px; border-radius: 4px;'>✅ Database connection successful</div>";
     } else {
-        $search_condition = "WHERE t.name = '$escaped_product_type'";
+        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+        echo "<strong>Database Error:</strong> Connection failed";
+        echo "</div>";
     }
+
+    // Require login
+    requireLogin();
+
+    // Set page title
+    $page_title = 'Manage Products';
+
+    // Pagination settings
+    $limit = 10;
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $start = ($page - 1) * $limit;
+
+    // Search filter
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
+    $location_filter = isset($_GET['location']) ? $_GET['location'] : 'all';
+    $product_type_filter = isset($_GET['product_type']) ? $_GET['product_type'] : 'all';
+    $search_condition = '';
+
+    if (!empty($search)) {
+        $escaped_search = mysqli_real_escape_string($conn, $search);
+        $search_condition .= "WHERE t.name LIKE '%$escaped_search%' 
+                           OR t.size LIKE '%$escaped_search%' 
+                           OR b.name LIKE '%$escaped_search%'";
+    }
+
+    if ($status_filter !== 'all') {
+        $escaped_status = mysqli_real_escape_string($conn, $status_filter);
+        if (!empty($search_condition)) {
+            $search_condition .= " AND t.`condition` = '$escaped_status'";
+        } else {
+            $search_condition = "WHERE t.`condition` = '$escaped_status'";
+        }
+    }
+
+    if ($location_filter !== 'all') {
+        $escaped_location = mysqli_real_escape_string($conn, $location_filter);
+        if (!empty($search_condition)) {
+            $search_condition .= " AND t.location_id = '$escaped_location'";
+        } else {
+            $search_condition = "WHERE t.location_id = '$escaped_location'";
+        }
+    }
+
+    if ($product_type_filter !== 'all') {
+        $escaped_product_type = mysqli_real_escape_string($conn, $product_type_filter);
+        if (!empty($search_condition)) {
+            $search_condition .= " AND t.name = '$escaped_product_type'";
+        } else {
+            $search_condition = "WHERE t.name = '$escaped_product_type'";
+        }
+    }
+
+    // Get total products for pagination
+    $total_query = "SELECT COUNT(*) as count FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition";
+    $total_result = $conn->query($total_query);
+    
+    if (!$total_result) {
+        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+        echo "<strong>Query Error:</strong> " . $conn->error;
+        echo "</div>";
+        $total_products = 0;
+    } else {
+        $total_products = $total_result->fetch_assoc()['count'];
+    }
+    
+    $total_pages = ceil($total_products / $limit);
+
+    // Get products for this page (with brand name and location)
+    $products_query = "SELECT t.*, b.name as brand_name, l.name as location_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition ORDER BY t.id DESC LIMIT $start, $limit";
+    $products_result = $conn->query($products_query);
+    
+    if (!$products_result) {
+        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+        echo "<strong>Products Query Error:</strong> " . $conn->error;
+        echo "</div>";
+    }
+
+    // Check if there are any products
+    $has_products = false;
+    $products_data = [];
+    if ($products_result) {
+        while ($product = $products_result->fetch_assoc()) {
+            $products_data[] = $product;
+            $has_products = true;
+        }
+    }
+
+} catch (Exception $e) {
+    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+    echo "<strong>Fatal Error:</strong> " . htmlspecialchars($e->getMessage());
+    echo "</div>";
 }
 
-// Get total products for pagination
-$total_query = "SELECT COUNT(*) as count FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition";
-$total_result = $conn->query($total_query);
-$total_products = $total_result->fetch_assoc()['count'];
-$total_pages = ceil($total_products / $limit);
-
-// Get products for this page (with brand name and location)
-$products_query = "SELECT t.*, b.name as brand_name, l.name as location_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition ORDER BY t.id DESC LIMIT $start, $limit";
-$products_result = $conn->query($products_query);
-
-// Check if there are any products
-$has_products = false;
-$products_data = [];
-while ($product = $products_result->fetch_assoc()) {
-    $products_data[] = $product;
-    $has_products = true;
-}
+// Flush any output so far
+ob_flush();
 
 // Include header
-include_once 'includes/header.php';
+if (file_exists('includes/header.php')) {
+    include_once 'includes/header.php';
+} else {
+    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+    echo "<strong>Error:</strong> header.php not found";
+    echo "</div>";
+}
 ?>
 
 <!-- Search Form -->
@@ -99,14 +161,18 @@ include_once 'includes/header.php';
             <select name="location" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
                 <option value="all" <?php echo $location_filter === 'all' ? 'selected' : ''; ?>>All Locations</option>
                 <?php
-                $locations_query = "SELECT id, name FROM locations ORDER BY name";
-                $locations_result = $conn->query($locations_query);
-                while ($location = $locations_result->fetch_assoc()) {
-                    echo '<option value="' . htmlspecialchars($location['id']) . '"';
-                    if ($location_filter === $location['id']) {
-                        echo ' selected';
+                if (isset($conn)) {
+                    $locations_query = "SELECT id, name FROM locations ORDER BY name";
+                    $locations_result = $conn->query($locations_query);
+                    if ($locations_result) {
+                        while ($location = $locations_result->fetch_assoc()) {
+                            echo '<option value="' . htmlspecialchars($location['id']) . '"';
+                            if ($location_filter === $location['id']) {
+                                echo ' selected';
+                            }
+                            echo '>' . htmlspecialchars($location['name']) . '</option>';
+                        }
                     }
-                    echo '>' . htmlspecialchars($location['name']) . '</option>';
                 }
                 ?>
             </select>
@@ -159,10 +225,10 @@ include_once 'includes/header.php';
             <?php foreach ($products_data as $product): ?>
                 <tr>
                     <td><?php echo $product['id']; ?></td>
-                    <td><?php echo htmlspecialchars($product['brand_name']); ?></td>
+                    <td><?php echo htmlspecialchars($product['brand_name'] ?? 'No Brand'); ?></td>
                     <td>
                         <?php 
-                        $product_type = htmlspecialchars($product['name']);
+                        $product_type = htmlspecialchars($product['name'] ?? 'Unknown');
                         $icon = '';
                         $css_class = '';
                         switch ($product_type) {
@@ -192,26 +258,36 @@ include_once 'includes/header.php';
                             <span class="product-type-text <?php echo $css_class; ?>"><?php echo $product_type; ?></span>
                         </div>
                     </td>
-                    <td><?php echo htmlspecialchars($product['size']); ?></td>
-                    <td>$<?php echo number_format($product['price'], 2); ?></td>
-                    <td><?php echo $product['stock_quantity']; ?></td>
+                    <td><?php echo htmlspecialchars($product['size'] ?? 'N/A'); ?></td>
+                    <td>$<?php echo number_format($product['price'] ?? 0, 2); ?></td>
+                    <td><?php echo $product['stock_quantity'] ?? 0; ?></td>
                     <td>
                         <span class="location-badge">
                             <?php echo htmlspecialchars($product['location_name'] ?? 'Unknown'); ?>
                         </span>
                     </td>
                     <td>
-                        <span class="status-badge status-<?php echo $product['condition']; ?>">
-                            <?php echo ucfirst($product['condition']); ?>
+                        <?php 
+                        $status = $product['condition'] ?? 'new';
+                        $status_class = $status === 'new' ? 'status-new' : 'status-used';
+                        $status_text = $status === 'new' ? 'New' : 'Used';
+                        ?>
+                        <span class="status-badge <?php echo $status_class; ?>">
+                            <?php echo $status_text; ?>
                         </span>
                     </td>
-                    <td class="admin-actions">
-                        <a href="edit_product.php?id=<?php echo $product['id']; ?>" class="btn-action btn-edit">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <a href="delete_product.php?id=<?php echo $product['id']; ?>" class="btn-action btn-delete delete-confirm">
-                            <i class="fas fa-trash"></i> Delete
-                        </a>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="view_product.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-info" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="edit_product.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-warning" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="delete_product.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this product?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -220,147 +296,42 @@ include_once 'includes/header.php';
 
     <!-- Pagination -->
     <?php if ($total_pages > 1): ?>
-        <div class="admin-pagination">
+        <div class="pagination" style="margin-top: 2rem; text-align: center;">
             <?php if ($page > 1): ?>
-                <a href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo $status_filter !== 'all' ? '&status=' . urlencode($status_filter) : ''; ?><?php echo $location_filter !== 'all' ? '&location=' . urlencode($location_filter) : ''; ?><?php echo $product_type_filter !== 'all' ? '&product_type=' . urlencode($product_type_filter) : ''; ?>">
-                    <i class="fas fa-chevron-left"></i> Previous
-                </a>
+                <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&location=<?php echo urlencode($location_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary">Previous</a>
             <?php endif; ?>
             
-            <?php
-            $start_page = max(1, $page - 2);
-            $end_page = min($total_pages, $page + 2);
-            
-            for ($i = $start_page; $i <= $end_page; $i++):
-            ?>
-                <a href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo $status_filter !== 'all' ? '&status=' . urlencode($status_filter) : ''; ?><?php echo $location_filter !== 'all' ? '&location=' . urlencode($location_filter) : ''; ?><?php echo $product_type_filter !== 'all' ? '&product_type=' . urlencode($product_type_filter) : ''; ?>" 
-                   class="<?php echo $i === $page ? 'active' : ''; ?>">
-                    <?php echo $i; ?>
-                </a>
+            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                <?php if ($i == $page): ?>
+                    <span class="btn btn-primary"><?php echo $i; ?></span>
+                <?php else: ?>
+                    <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&location=<?php echo urlencode($location_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary"><?php echo $i; ?></a>
+                <?php endif; ?>
             <?php endfor; ?>
             
             <?php if ($page < $total_pages): ?>
-                <a href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo $status_filter !== 'all' ? '&status=' . urlencode($status_filter) : ''; ?><?php echo $location_filter !== 'all' ? '&location=' . urlencode($location_filter) : ''; ?><?php echo $product_type_filter !== 'all' ? '&product_type=' . urlencode($product_type_filter) : ''; ?>">
-                    Next <i class="fas fa-chevron-right"></i>
-                </a>
+                <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>&location=<?php echo urlencode($location_filter); ?>&product_type=<?php echo urlencode($product_type_filter); ?>" class="btn btn-secondary">Next</a>
             <?php endif; ?>
         </div>
     <?php endif; ?>
+
 <?php else: ?>
-    <div class="alert alert-danger">
-        No products found. <?php echo !empty($search) ? 'Try a different search term or ' : ''; ?><a href="add_product.php">add a new product</a>.
+    <div class="no-products" style="text-align: center; padding: 3rem; color: #666;">
+        <i class="fas fa-box-open fa-3x" style="color: #ddd; margin-bottom: 1rem;"></i>
+        <h3>No products found</h3>
+        <p>No products match your current search criteria.</p>
+        <p>Try adjusting your filters or add some products.</p>
+        <div style="margin-top: 2rem;">
+            <a href="add_product.php" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Your First Product
+            </a>
+        </div>
     </div>
 <?php endif; ?>
 
-<style>
-.status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    display: inline-block;
-}
-
-.status-new {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-used {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.location-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    background: #e3f2fd;
-    color: #1565c0;
-    display: inline-block;
-}
-
-/* Filter dropdown styling */
-.admin-search select {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 0.5rem;
-    font-size: 1rem;
-    min-width: 150px;
-}
-
-.admin-search select:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-/* Product type filter styling */
-.admin-search select[name="product_type"] option {
-    padding: 0.5rem;
-}
-
-.admin-search select[name="product_type"] option[value="Winter Tires"] {
-    background: #e3f2fd;
-}
-
-.admin-search select[name="product_type"] option[value="Summer Tires"] {
-    background: #fff3e0;
-}
-
-.admin-search select[name="product_type"] option[value="All Season Tires"] {
-    background: #f3e5f5;
-}
-
-.admin-search select[name="product_type"] option[value="Studded Tires"] {
-    background: #ffebee;
-}
-
-/* Product type column styling */
-.product-type-cell {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-}
-
-.product-type-icon {
-    font-size: 1.2rem;
-    display: inline-block;
-    width: 1.5rem;
-    text-align: center;
-}
-
-.product-type-text {
-    font-weight: 500;
-    color: #333;
-}
-
-/* Winter tires styling */
-.product-type-winter {
-    color: #1565c0;
-}
-
-/* Summer tires styling */
-.product-type-summer {
-    color: #f57c00;
-}
-
-/* All season tires styling */
-.product-type-all-season {
-    color: #7b1fa2;
-}
-
-/* Studded tires styling */
-.product-type-studded {
-    color: #d32f2f;
-}
-</style>
-
 <?php
 // Include footer
-include_once 'includes/footer.php';
+if (file_exists('includes/footer.php')) {
+    include_once 'includes/footer.php';
+}
 ?> 
