@@ -11,6 +11,12 @@ if (session_status() === PHP_SESSION_NONE) {
 // Start output buffering to catch any early errors
 ob_start();
 
+// Initialize variables with default values
+$total_products = 0;
+$has_products = false;
+$products_data = [];
+$total_pages = 1;
+
 try {
     // Include database connection
     if (file_exists('../includes/db_connect.php')) {
@@ -91,37 +97,35 @@ try {
     }
 
     // Get total products for pagination
-    $total_query = "SELECT COUNT(*) as count FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition";
-    $total_result = $conn->query($total_query);
-    
-    if (!$total_result) {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Query Error:</strong> " . $conn->error;
-        echo "</div>";
-        $total_products = 0;
-    } else {
-        $total_products = $total_result->fetch_assoc()['count'];
-    }
-    
-    $total_pages = ceil($total_products / $limit);
+    if (isset($conn)) {
+        $total_query = "SELECT COUNT(*) as count FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition";
+        $total_result = $conn->query($total_query);
+        
+        if (!$total_result) {
+            echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+            echo "<strong>Query Error:</strong> " . $conn->error;
+            echo "</div>";
+            $total_products = 0;
+        } else {
+            $total_products = $total_result->fetch_assoc()['count'];
+        }
+        
+        $total_pages = ceil($total_products / $limit);
 
-    // Get products for this page (with brand name and location)
-    $products_query = "SELECT t.*, b.name as brand_name, l.name as location_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition ORDER BY t.id DESC LIMIT $start, $limit";
-    $products_result = $conn->query($products_query);
-    
-    if (!$products_result) {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Products Query Error:</strong> " . $conn->error;
-        echo "</div>";
-    }
-
-    // Check if there are any products
-    $has_products = false;
-    $products_data = [];
-    if ($products_result) {
-        while ($product = $products_result->fetch_assoc()) {
-            $products_data[] = $product;
-            $has_products = true;
+        // Get products for this page (with brand name and location)
+        $products_query = "SELECT t.*, b.name as brand_name, l.name as location_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id LEFT JOIN locations l ON t.location_id = l.id $search_condition ORDER BY t.id DESC LIMIT $start, $limit";
+        $products_result = $conn->query($products_query);
+        
+        if (!$products_result) {
+            echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
+            echo "<strong>Products Query Error:</strong> " . $conn->error;
+            echo "</div>";
+        } else {
+            // Check if there are any products
+            while ($product = $products_result->fetch_assoc()) {
+                $products_data[] = $product;
+                $has_products = true;
+            }
         }
     }
 
