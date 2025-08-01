@@ -174,9 +174,12 @@ class DatabaseMigration {
             ],
             '011_insert_default_admin_user' => [
                 'description' => 'Insert default admin user if no users exist',
-                'sql' => "INSERT INTO users (username, first_name, last_name, password, email, is_admin) 
-                    SELECT 'admin', 'Admin', 'User', '" . '$2y$10$Nq/VTTeC7NqIrdWUwJJvR.mRXMy8YH3wF5WKIUG63yzsCEP3Cq34q' . "', 'admin@gtautomotives.com', 1 
-                    WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin')"
+                'sql' => function() {
+                    $password_hash = '$2y$10$Nq/VTTeC7NqIrdWUwJJvR.mRXMy8YH3wF5WKIUG63yzsCEP3Cq34q';
+                    return "INSERT INTO users (username, first_name, last_name, password, email, is_admin) 
+                        SELECT 'admin', 'Admin', 'User', '$password_hash', 'admin@gtautomotives.com', 1 
+                        WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin')";
+                }
             ],
             '012_insert_sample_data' => [
                 'description' => 'Insert sample brands and categories',
@@ -207,6 +210,11 @@ class DatabaseMigration {
     
     public function executeMigration($migration_name, $sql) {
         try {
+            // Handle both string and function SQL definitions
+            if (is_callable($sql)) {
+                $sql = $sql();
+            }
+            
             // Execute the migration
             if ($this->conn->query($sql)) {
                 // Record successful execution
