@@ -175,4 +175,6 @@ if ($error_log && file_exists($error_log)) {
 
 echo "<hr>";
 echo "<p><a href='users.php' style='background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>← Back to Users Page</a></p>";
+echo "<p><a href='fix_users_table.php' style='background: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>🔧 Fix Users Table Structure</a></p>";
+echo "<p><a href='create_admin_user.php' style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>👤 Create Admin User</a></p>";
 ?> 
