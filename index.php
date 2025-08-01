@@ -1089,7 +1089,10 @@
                 
                 <!-- First Contact Person -->
                 <div class="footer-contact-person">
-                    <h4><i class="fas fa-user"></i> Johny</h4>
+                    <h4>
+                        <div class="contact-avatar johny">J</div>
+                        Johny
+                    </h4>
                     <ul>
                         <li><i class="fas fa-phone"></i> (250) 986-9191</li>
                         <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>
@@ -1098,7 +1101,10 @@
                 
                 <!-- Second Contact Person -->
                 <div class="footer-contact-person">
-                    <h4><i class="fas fa-user"></i> Harjinder Gill</h4>
+                    <h4>
+                        <div class="contact-avatar harjinder">H</div>
+                        Harjinder Gill
+                    </h4>
                     <ul>
                         <li><i class="fas fa-phone"></i> (250) 565-1571</li>
                         <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>

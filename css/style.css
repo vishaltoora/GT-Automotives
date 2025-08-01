@@ -1532,7 +1532,7 @@ footer .container {
 }
 
 .footer-contact-person h4 {
-    color: #333;
+    color: white;
     font-size: 1rem;
     margin-bottom: 0.5rem;
     display: flex;
@@ -1552,6 +1552,31 @@ footer .container {
 .footer-contact-person ul li {
     padding: 0.25rem 0;
     font-size: 0.9rem;
+}
+
+/* Contact Avatar Styles */
+.contact-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #243c55, #4a5c6b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.contact-avatar.johny {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.contact-avatar.harjinder {
+    background: linear-gradient(135deg, #007bff, #6610f2);
 }
 
 /* Responsive adjustments for contact sections */
