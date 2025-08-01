@@ -1,37 +1,16 @@
 <?php
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Start output buffering to catch any early errors
 ob_start();
 
 try {
-    // Include error handler for debugging
+    // Include error handler
     if (file_exists('includes/error_handler.php')) {
         require_once 'includes/error_handler.php';
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Error:</strong> error_handler.php not found";
-        echo "</div>";
     }
 
     // Include database connection
     if (file_exists('includes/db_connect.php')) {
         require_once 'includes/db_connect.php';
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Error:</strong> db_connect.php not found";
-        echo "</div>";
-    }
-
-    // Test database connection
-    if (isset($conn) && !$conn->connect_error) {
-        echo "<div style='background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; margin: 10px; border-radius: 4px;'>✅ Database connection successful</div>";
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Database Error:</strong> Connection failed";
-        echo "</div>";
     }
 
     // Filters for products
@@ -67,12 +46,6 @@ try {
     
     if (isset($conn)) {
         $result = $conn->query($query);
-        
-        if (!$result) {
-            echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-            echo "<strong>Query Error:</strong> " . $conn->error;
-            echo "</div>";
-        }
     } else {
         $result = false;
     }
@@ -82,7 +55,7 @@ try {
         $brands_query = "SELECT DISTINCT b.name as brand FROM tires t LEFT JOIN brands b ON t.brand_id = b.id WHERE b.name IS NOT NULL ORDER BY b.name";
         $brands_result = $conn->query($brands_query);
 
-        $sizes_query = "SELECT DISTINCT size FROM tires WHERE size IS NOT NULL ORDER BY size";
+        $sizes_query = "SELECT name FROM sizes WHERE is_active = 1 ORDER BY sort_order ASC, name ASC";
         $sizes_result = $conn->query($sizes_query);
     } else {
         $brands_result = false;
@@ -102,9 +75,8 @@ try {
     ];
 
 } catch (Exception $e) {
-    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-    echo "<strong>Fatal Error:</strong> " . htmlspecialchars($e->getMessage());
-    echo "</div>";
+    // Handle error silently or log it
+    error_log("Error in products.php: " . $e->getMessage());
 }
 
 // Flush any output so far
@@ -130,10 +102,26 @@ ob_flush();
         }
         
         .filter-row {
-            display: flex;
-            align-items: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            flex-wrap: wrap;
+            align-items: end;
+            margin-bottom: 1rem;
+        }
+        
+        .search-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            align-items: end;
+            margin-bottom: 1rem;
+        }
+        
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            align-items: end;
             margin-bottom: 1rem;
         }
         
@@ -141,7 +129,6 @@ ob_flush();
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-            min-width: 150px;
         }
         
         .filter-group label {
@@ -152,11 +139,14 @@ ob_flush();
         
         .filter-group select,
         .filter-group input {
-            padding: 0.5rem;
+            padding: 0.75rem;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 1rem;
             background: white;
+            width: 100%;
+            box-sizing: border-box;
+            min-width: 200px;
         }
         
         .filter-group select:focus,
@@ -167,22 +157,26 @@ ob_flush();
         }
         
         .search-group {
-            flex: 1;
-            min-width: 250px;
+            width: 100%;
         }
         
         .filter-buttons {
             display: flex;
-            gap: 0.5rem;
-            align-items: flex-end;
+            gap: 1rem;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
         }
         
         .filter-buttons .btn {
-            padding: 0.5rem 1rem;
+            padding: 0.75rem 1.5rem;
             font-size: 0.9rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            min-width: 140px;
+            justify-content: center;
+            height: 44px;
         }
         
         /* Search summary styles */
@@ -244,17 +238,27 @@ ob_flush();
             justify-content: center;
             color: white;
             font-size: 3rem;
+            overflow: hidden;
         }
         
         .brand-logo {
-            max-width: 80px;
+            max-width: 120px;
             max-height: 80px;
+            width: auto;
+            height: auto;
             object-fit: contain;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         
         .brand-logo-fallback {
             font-size: 3rem;
             color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
         }
         
         .brand-overlay {
@@ -400,103 +404,60 @@ ob_flush();
             background: #545b62;
         }
         
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .filter-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .filter-group {
-                min-width: auto;
-            }
-            
-            .search-group {
-                min-width: auto;
-            }
-            
-            .no-products-actions {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-        
-        /* Active filter indicators */
-        .filter-active {
-            background: #e3f2fd;
-            border-color: #2196f3;
-        }
-        
-        .filter-active label {
-            color: #1976d2;
-        }
-        
         /* Stock info styles */
         .stock-info {
-            margin: 0.5rem 0;
-            font-size: 0.9rem;
+            margin-bottom: 1rem;
         }
         
         .stock-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.3rem;
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            border: 1px solid;
-        }
-        
-        .stock-badge i {
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
             font-size: 0.8rem;
+            font-weight: 600;
         }
         
-        .in-stock {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border-color: #a5d6a7;
+        .stock-badge.in-stock {
+            background: #d4edda;
+            color: #155724;
         }
         
-        .low-stock {
-            background-color: #fff9c4;
-            color: #f57c00;
-            border-color: #ffe082;
+        .stock-badge.low-stock {
+            background: #fff3cd;
+            color: #856404;
         }
         
-        .out-of-stock {
-            background-color: #ffebee;
-            color: #d32f2f;
-            border-color: #ef9a9a;
+        .stock-badge.out-of-stock {
+            background: #f8d7da;
+            color: #721c24;
         }
         
         /* Price info styles */
         .price-info {
             display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin: 0.5rem 0;
-            padding: 0.5rem;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
         }
         
         .per-tire-price,
         .set-price {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            text-align: center;
-            flex: 1;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .set-price {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
         }
         
         .price-label {
-            font-weight: 600;
             color: #666;
             font-size: 0.8rem;
             margin-bottom: 0.2rem;
@@ -513,6 +474,72 @@ ob_flush();
         .set-price .price-value {
             color: #1976d2;
             font-size: 1.2rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .filter-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 991px) {
+            .filter-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+            
+            .filter-buttons {
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .filter-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .filter-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .filter-buttons .btn {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .brand-logo {
+                max-width: 100px;
+                max-height: 60px;
+            }
+        }
+        
+        @media (max-width: 575px) {
+            .filters {
+                padding: 1rem;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .filter-buttons .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .brand-logo {
+                max-width: 80px;
+                max-height: 50px;
+            }
         }
         
         /* Responsive price display */
@@ -541,11 +568,14 @@ ob_flush();
     <nav class="navbar">
         <div class="container">
             <a href="index.php" class="navbar-brand">GT Automotives</a>
-            <div class="nav-links">
-                <a href="index.php">Home</a>
-                <a href="products.php">Products</a>
-                <a href="contact.php">Contact</a>
-                <a href="admin/login.php">Admin</a>
+            <button class="mobile-nav-toggle" id="mobile-nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-links" id="nav-links">
+                <a href="index.php"><i class="fas fa-home"></i> Home</a>
+                <a href="products.php"><i class="fas fa-tire"></i> Products</a>
+                <a href="contact.php"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="admin/login.php"><i class="fas fa-user-shield"></i> Admin</a>
             </div>
         </div>
     </nav>
@@ -570,24 +600,28 @@ ob_flush();
                         <select name="size" id="size">
                             <option value="">All Sizes</option>
                             <?php if ($sizes_result): while ($size = $sizes_result->fetch_assoc()): ?>
-                                <option value="<?php echo htmlspecialchars($size['size']); ?>" <?php echo $size_filter === $size['size'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($size['size']); ?>
+                                <option value="<?php echo htmlspecialchars($size['name']); ?>" <?php echo $size_filter === $size['name'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($size['name']); ?>
                                 </option>
                             <?php endwhile; endif; ?>
                         </select>
                     </div>
+                </div>
+                <div class="search-row">
                     <div class="filter-group search-group">
                         <label for="search">Search</label>
                         <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search_filter); ?>" placeholder="Search by name, description, brand, or size...">
                     </div>
                 </div>
-                <div class="filter-buttons">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Apply Filters
-                    </button>
-                    <a href="products.php" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Clear All
-                    </a>
+                <div class="button-row">
+                    <div class="filter-buttons">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Apply Filters
+                        </button>
+                        <a href="products.php" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Clear All
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>
@@ -709,11 +743,24 @@ ob_flush();
         <div class="container">
             <div class="footer-section">
                 <h3>Contact Us</h3>
-                <ul>
-                    <li><i class="fas fa-phone"></i> (250) 986-9191</li>
-                    <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>
-                    <li><i class="fas fa-user"></i> Contact: Johny</li>
-                </ul>
+                
+                <!-- First Contact Person -->
+                <div class="footer-contact-person">
+                    <h4><i class="fas fa-user"></i> Johny</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> (250) 986-9191</li>
+                        <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>
+                    </ul>
+                </div>
+                
+                <!-- Second Contact Person -->
+                <div class="footer-contact-person">
+                    <h4><i class="fas fa-user"></i> Harjinder Gill</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> (250) 565-1571</li>
+                        <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>
+                    </ul>
+                </div>
             </div>
             <div class="footer-section">
                 <h3>Business Hours</h3>
@@ -786,6 +833,43 @@ ob_flush();
                         this.form.submit();
                     }
                 }, 500);
+            });
+        }
+
+        // Mobile Navigation Toggle
+        const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+        const navLinks = document.getElementById('nav-links');
+        
+        if (mobileNavToggle && navLinks) {
+            mobileNavToggle.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+                
+                // Change icon based on state
+                const icon = this.querySelector('i');
+                if (navLinks.classList.contains('active')) {
+                    icon.className = 'fas fa-times';
+                } else {
+                    icon.className = 'fas fa-bars';
+                }
+            });
+            
+            // Close mobile menu when clicking on a link
+            const navLinksItems = navLinks.querySelectorAll('a');
+            navLinksItems.forEach(link => {
+                link.addEventListener('click', function() {
+                    navLinks.classList.remove('active');
+                    const icon = mobileNavToggle.querySelector('i');
+                    icon.className = 'fas fa-bars';
+                });
+            });
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!mobileNavToggle.contains(event.target) && !navLinks.contains(event.target)) {
+                    navLinks.classList.remove('active');
+                    const icon = mobileNavToggle.querySelector('i');
+                    icon.className = 'fas fa-bars';
+                }
             });
         }
     });

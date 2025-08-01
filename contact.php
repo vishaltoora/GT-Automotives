@@ -12,11 +12,14 @@
     <nav class="navbar">
         <div class="container">
             <a href="index.php" class="navbar-brand">GT Automotives</a>
-            <div class="nav-links">
-                <a href="index.php">Home</a>
-                <a href="products.php">Products</a>
-                <a href="contact.php">Contact</a>
-                <a href="admin/login.php">Admin</a>
+            <button class="mobile-nav-toggle" id="mobile-nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-links" id="nav-links">
+                <a href="index.php"><i class="fas fa-home"></i> Home</a>
+                <a href="products.php"><i class="fas fa-tire"></i> Products</a>
+                <a href="contact.php"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="admin/login.php"><i class="fas fa-user-shield"></i> Admin</a>
             </div>
         </div>
     </nav>
@@ -26,20 +29,36 @@
             <!-- Contact Information -->
             <div class="contact-info">
                 <h2>Contact Information</h2>
-                <ul class="contact-details">
-                    <li>
-                        <i class="fas fa-user"></i>
-                        <span>Contact Person: Johny</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-envelope"></i>
-                        <span>Email: gt-automotives@outlook.com</span>
-                    </li>
-                    <li>
-                        <i class="fas fa-phone"></i>
-                        <span>Phone: (250) 986-9191</span>
-                    </li>
-                </ul>
+                
+                <!-- First Contact Person -->
+                <div class="contact-person-section">
+                    <h3><i class="fas fa-user"></i> Johny</h3>
+                    <ul class="contact-details">
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>Email: gt-automotives@outlook.com</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <span>Phone: (250) 986-9191</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Second Contact Person -->
+                <div class="contact-person-section">
+                    <h3><i class="fas fa-user"></i> Harjinder Gill</h3>
+                    <ul class="contact-details">
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>Email: gt-automotives@outlook.com</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            <span>Phone: (250) 565-1571</span>
+                        </li>
+                    </ul>
+                </div>
 
                 <div class="business-hours">
                     <h3>Business Hours</h3>
@@ -87,11 +106,24 @@
         <div class="container">
             <div class="footer-section">
                 <h3>Contact Us</h3>
-                <ul>
-                    <li><i class="fas fa-phone"></i> (250) 986-9191</li>
-                    <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>
-                    <li><i class="fas fa-user"></i> Contact: Johny</li>
-                </ul>
+                
+                <!-- First Contact Person -->
+                <div class="footer-contact-person">
+                    <h4><i class="fas fa-user"></i> Johny</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> (250) 986-9191</li>
+                        <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>
+                    </ul>
+                </div>
+                
+                <!-- Second Contact Person -->
+                <div class="footer-contact-person">
+                    <h4><i class="fas fa-user"></i> Harjinder Gill</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> (250) 565-1571</li>
+                        <li><i class="fas fa-envelope"></i> gt-automotives@outlook.com</li>
+                    </ul>
+                </div>
             </div>
             <div class="footer-section">
                 <h3>Business Hours</h3>
@@ -110,5 +142,46 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Mobile Navigation Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+            const navLinks = document.getElementById('nav-links');
+            
+            if (mobileNavToggle && navLinks) {
+                mobileNavToggle.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+                    
+                    // Change icon based on state
+                    const icon = this.querySelector('i');
+                    if (navLinks.classList.contains('active')) {
+                        icon.className = 'fas fa-times';
+                    } else {
+                        icon.className = 'fas fa-bars';
+                    }
+                });
+                
+                // Close mobile menu when clicking on a link
+                const navLinksItems = navLinks.querySelectorAll('a');
+                navLinksItems.forEach(link => {
+                    link.addEventListener('click', function() {
+                        navLinks.classList.remove('active');
+                        const icon = mobileNavToggle.querySelector('i');
+                        icon.className = 'fas fa-bars';
+                    });
+                });
+                
+                // Close mobile menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!mobileNavToggle.contains(event.target) && !navLinks.contains(event.target)) {
+                        navLinks.classList.remove('active');
+                        const icon = mobileNavToggle.querySelector('i');
+                        icon.className = 'fas fa-bars';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html> 

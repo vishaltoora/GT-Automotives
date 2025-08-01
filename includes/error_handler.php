@@ -1,10 +1,6 @@
 <?php
 // Centralized error handler for deployment debugging
 
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Custom error handler
 function customErrorHandler($errno, $errstr, $errfile, $errline) {
     $error_message = "Error [$errno]: $errstr in $errfile on line $errline";
@@ -12,7 +8,7 @@ function customErrorHandler($errno, $errstr, $errfile, $errline) {
     // Log error
     error_log($error_message);
     
-    // In development, display error
+    // Only display errors in development
     if (isset($_GET['debug']) || $_SERVER['SERVER_NAME'] === 'localhost') {
         echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
         echo "<strong>Error:</strong> " . htmlspecialchars($error_message);

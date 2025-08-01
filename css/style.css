@@ -22,13 +22,15 @@ body {
    Navigation
    ----------------------------- */
 .navbar {
-  background-color: #fff;
+  background: #243c55;
   padding: 1rem 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   position: fixed;
   width: 100%;
   top: 0;
   z-index: 1000;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .navbar .container {
@@ -40,26 +42,200 @@ body {
 }
 
 .navbar-brand {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
-  color: #333;
+  color: white;
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+  color: #f0f0f0;
+  transform: translateY(-1px);
+}
+
+.navbar-brand::before {
+  content: '🚗';
+  font-size: 1.5rem;
 }
 
 .nav-links {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
+  align-items: center;
 }
 
 .nav-links a {
-  color: #333;
+  color: white;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s ease;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-links a i {
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-links a:hover i {
+  transform: scale(1.1);
+}
+
+.nav-links a::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: left 0.3s ease;
+  border-radius: 25px;
+}
+
+.nav-links a:hover::before {
+  left: 0;
 }
 
 .nav-links a:hover {
-  color: #007bff;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav-links a.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile Navigation */
+.mobile-nav-toggle {
+  display: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 1.5rem;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.mobile-nav-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Mobile Navigation Styles */
+@media (max-width: 767px) {
+  .mobile-nav-toggle {
+    display: block;
+  }
+  
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #243c55;
+    flex-direction: column;
+    padding: 1.5rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 15px 15px;
+    gap: 1rem;
+    animation: slideDown 0.3s ease-out;
+  }
+  
+  .nav-links.active {
+    display: flex;
+  }
+  
+  .nav-links a {
+    width: 100%;
+    text-align: center;
+    padding: 1rem 2rem;
+    border-radius: 15px;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    justify-content: center;
+  }
+  
+  .nav-links a i {
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+  }
+  
+  .nav-links a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .navbar-brand {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .navbar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .navbar-brand {
+    font-size: 1.3rem;
+  }
+  
+  .nav-links {
+    padding: 1rem;
+  }
+  
+  .nav-links a {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    justify-content: center;
+  }
+  
+  .nav-links a i {
+    font-size: 1rem;
+    margin-right: 0.4rem;
+  }
+}
+
+/* Animation for mobile menu */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced focus states for accessibility */
+.nav-links a:focus,
+.mobile-nav-toggle:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+.navbar * {
+  transition: all 0.3s ease;
 }
 
 /* -----------------------------
@@ -100,15 +276,13 @@ body {
 .hero h1 {
   font-size: 3rem;
   margin-bottom: 1rem;
-  animation: fadeIn 1s ease-in;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
 }
 
 .hero p {
   font-size: 1.2rem;
   margin-bottom: 2rem;
-  animation: fadeIn 1s ease-in 0.5s backwards;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  opacity: 0.9;
 }
 
 /* -----------------------------
@@ -116,29 +290,32 @@ body {
    ----------------------------- */
 .btn {
   display: inline-block;
-  padding: 0.8rem 2rem;
-  background-color: #007bff;
-  color: #fff;
+  padding: 0.8rem 1.5rem;
+  background: #243c55;
+  color: white;
   text-decoration: none;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+  border: none;
+  cursor: pointer;
 }
 
 .btn:hover {
-  background-color: #0056b3;
+  background: #1a2d3f;
 }
 
 /* -----------------------------
    Features Section
    ----------------------------- */
 .features {
-  padding: 4rem 2rem;
-  background-color: #f8f9fa;
+  padding: 4rem 0;
 }
 
 .features .container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 2rem;
 }
 
 .features h2 {
@@ -148,16 +325,16 @@ body {
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
 }
 
 .feature-card {
-  background-color: #fff;
+  background: white;
   padding: 2rem;
-  border-radius: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
 }
 
@@ -166,21 +343,23 @@ body {
 }
 
 .feature-card i {
-  font-size: 2.5rem;
-  color: #007bff;
+  font-size: 3rem;
+  color: #243c55;
   margin-bottom: 1rem;
 }
 
 /* -----------------------------
-   Popular Brands Section
+   Popular Brands
    ----------------------------- */
 .popular-brands {
-  padding: 4rem 2rem;
+  padding: 4rem 0;
+  background: #f8f9fa;
 }
 
 .popular-brands .container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 2rem;
 }
 
 .popular-brands h2 {
@@ -192,43 +371,38 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 2rem;
-  align-items: center;
 }
 
 .brand-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
   text-align: center;
-  padding: 1rem;
   transition: transform 0.3s ease;
 }
 
 .brand-card:hover {
-  transform: scale(1.05);
+  transform: translateY(-5px);
 }
 
-/* -----------------------------
-   Tire Emoji Styles
-   ----------------------------- */
 .emoji-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+  font-size: 3rem;
+  margin-bottom: 1rem;
 }
 
 .big-tire-emoji {
-  font-size: 5rem;
-  display: block;
-  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+  font-size: 4rem;
+  margin-bottom: 1rem;
 }
 
 .brand-name {
-  font-weight: bold;
   font-size: 1.2rem;
+  font-weight: bold;
   color: #333;
 }
 
 /* -----------------------------
-   Products Page Styles
+   Products Section
    ----------------------------- */
 .products-container {
   max-width: 1200px;
@@ -237,9 +411,10 @@ body {
 }
 
 .filters {
-  background: #f8f9fa;
-  padding: 1.5rem;
+  background: white;
+  padding: 2rem;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   margin-bottom: 2rem;
 }
 
@@ -247,6 +422,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
+  align-items: end;
 }
 
 .filter-group {
@@ -261,15 +437,16 @@ body {
 
 .filter-group select,
 .filter-group input {
-  padding: 0.5rem;
+  padding: 0.8rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-family: inherit;
 }
 
 .filter-buttons {
   display: flex;
   gap: 1rem;
-  margin-top: 1rem;
+  align-items: end;
 }
 
 .btn-primary {
@@ -278,35 +455,42 @@ body {
 }
 
 .btn-primary:hover {
-  background: #1a2a3a;
+  background: #1a2d3f;
 }
 
 .btn-secondary {
-  background: #6c757d;
+  background: #4a5c6b;
   color: white;
 }
 
+.btn-secondary:hover {
+  background: #3d4c59;
+}
+
 .btn-success {
-  background: #28a745;
+  background: #243c55;
   color: white;
 }
 
 .btn-success:hover {
-  background: #1e7e34;
+  background: #1a2d3f;
 }
 
 .btn-danger {
-  background: #dc3545;
+  background: #8b2635;
   color: white;
 }
 
 .btn-danger:hover {
-  background: #c82333;
+  background: #7a1f2d;
 }
 
+/* -----------------------------
+   Products Grid
+   ----------------------------- */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 2rem;
 }
 
@@ -323,14 +507,13 @@ body {
 }
 
 .product-image {
-  width: 100%;
+  position: relative;
   height: 200px;
+  overflow: hidden;
   background: #f8f9fa;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  position: relative;
 }
 
 .product-image img {
@@ -341,14 +524,14 @@ body {
 
 .brand-overlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0,0,0,0.7);
+  top: 10px;
+  right: 10px;
+  background: rgba(36, 60, 85, 0.9);
   color: white;
-  padding: 0.5rem;
-  text-align: center;
-  font-weight: bold;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .product-info {
@@ -356,101 +539,105 @@ body {
 }
 
 .product-brand {
-  color: #6c757d;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.product-name {
-  font-size: 1.2rem;
+  color: #243c55;
   font-weight: 500;
   margin-bottom: 0.5rem;
 }
 
-.product-size {
-  color: #6c757d;
+.product-name {
+  font-size: 1.1rem;
+  font-weight: bold;
   margin-bottom: 0.5rem;
+}
+
+.product-size {
+  color: #666;
+  margin-bottom: 1rem;
 }
 
 .product-price {
   font-size: 1.3rem;
-  font-weight: 600;
-  color: #007bff;
+  font-weight: bold;
+  color: #28a745;
   margin-bottom: 1rem;
 }
 
 .product-description {
   color: #666;
   margin-bottom: 1rem;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .product-features {
   margin-bottom: 1rem;
-  font-size: 0.9rem;
 }
 
 .product-features ul {
-  padding-left: 1.2rem;
-  margin-top: 0.5rem;
+  list-style: none;
+  padding: 0;
 }
 
 .set-label {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #007bff;
-  color: white;
-  padding: 0.3rem 0.7rem;
+  display: inline-block;
+  background: #ffc107;
+  color: #212529;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
   font-size: 0.8rem;
-  font-weight: bold;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
 }
 
+/* -----------------------------
+   No Products State
+   ----------------------------- */
 .no-products {
   text-align: center;
-  padding: 3rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin-top: 2rem;
+  padding: 4rem 2rem;
+  color: #666;
 }
 
-/* Tire Emoji Styles in Products */
 .emoji-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 8px 8px 0 0;
-  height: 100%;
-  width: 100%;
-}
-
-.tire-emoji {
+  display: inline-block;
   font-size: 4rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
   transition: transform 0.3s ease;
 }
 
+.tire-emoji {
+  display: block;
+}
+
 .emoji-container:hover .tire-emoji {
-  transform: rotate(10deg);
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
 }
 
 /* -----------------------------
    Footer
    ----------------------------- */
 footer {
-  background-color: #333;
-  color: #fff;
-  padding: 3rem 2rem;
+  background: #243c55;
+  color: white;
+  padding: 3rem 0 1rem;
+  margin-top: 4rem;
 }
 
 footer .container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 2rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
@@ -469,39 +656,13 @@ footer .container {
 }
 
 .footer-section a {
-  color: #fff;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .footer-section a:hover {
-  color: #007bff;
-}
-
-/* -----------------------------
-   Responsive Design
-   ----------------------------- */
-@media (max-width: 768px) {
-  .navbar {
-    padding: 1rem;
-  }
-
-  .nav-links {
-    display: none;
-  }
-
-  .hero h1 {
-    font-size: 2rem;
-  }
-
-  .hero p {
-    font-size: 1rem;
-  }
-
-  .features-grid,
-  .brands-grid {
-    grid-template-columns: 1fr;
-  }
+  color: white;
 }
 
 /* -----------------------------
@@ -543,7 +704,7 @@ footer .container {
 
 .contact-details i {
   width: 20px;
-  color: #007bff;
+  color: #243c55;
 }
 
 .business-hours {
@@ -603,6 +764,662 @@ footer .container {
 }
 
 /* -----------------------------
+   Admin Panel Responsive Styles
+   ----------------------------- */
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 250px;
+  background: #243c55;
+  color: white;
+  padding: 1.5rem 0;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 1000;
+  transition: width 0.3s ease;
+}
+
+.admin-brand {
+  padding: 0 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  position: relative;
+}
+
+.admin-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-nav li {
+  margin-bottom: 0.2rem;
+}
+
+.admin-nav a {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.admin-nav i {
+  width: 20px;
+  margin-right: 10px;
+  text-align: center;
+}
+
+.admin-content {
+  flex: 1;
+  margin-left: 250px;
+  padding: 2rem;
+  transition: margin-left 0.3s ease;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+}
+
+.admin-user span {
+  margin-right: 1rem;
+  color: #666;
+}
+
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.admin-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-card-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.admin-card-icon {
+  font-size: 1.5rem;
+  color: #243c55;
+}
+
+.admin-card-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.admin-card-label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.admin-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.3s ease;
+}
+
+.btn-view {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.btn-edit {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.btn-delete {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.btn-view:hover {
+  background: #bbdefb;
+}
+
+.btn-edit:hover {
+  background: #c8e6c9;
+}
+
+.btn-delete:hover {
+  background: #ffcdd2;
+}
+
+.admin-form {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-submit {
+  margin-top: 1.5rem;
+}
+
+/* -----------------------------
+   Comprehensive Responsive Design
+   ----------------------------- */
+
+/* Large Desktop (1200px and up) */
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1200px;
+  }
+  
+  .hero h1 {
+    font-size: 3.5rem;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+/* Desktop (992px to 1199px) */
+@media (max-width: 1199px) and (min-width: 992px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+/* Tablet (768px to 991px) */
+@media (max-width: 991px) and (min-width: 768px) {
+  .navbar {
+    padding: 1rem;
+  }
+  
+  .hero {
+    height: 70vh;
+  }
+  
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+  
+  .hero p {
+    font-size: 1.1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .brands-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  /* Admin Panel Tablet */
+  .admin-sidebar {
+    width: 200px;
+  }
+  
+  .admin-content {
+    margin-left: 200px;
+  }
+  
+  .admin-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Mobile Large (576px to 767px) */
+@media (max-width: 767px) and (min-width: 576px) {
+  .hero {
+    height: 60vh;
+    margin-top: 70px;
+  }
+  
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .brands-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filters form {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-buttons {
+    flex-direction: column;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Admin Panel Mobile Large */
+  .admin-sidebar {
+    width: 60px;
+  }
+  
+  .admin-sidebar .admin-brand span,
+  .admin-sidebar .admin-nav li a span {
+    display: none;
+  }
+  
+  .admin-sidebar .admin-nav li a {
+    padding: 0.75rem;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .admin-sidebar .admin-nav li a i {
+    margin-right: 0;
+    width: auto;
+  }
+  
+  .admin-content {
+    margin-left: 60px;
+    padding: 1rem;
+  }
+  
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .admin-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-table {
+    font-size: 0.9rem;
+  }
+  
+  .admin-actions {
+    flex-direction: column;
+  }
+}
+
+/* Mobile Small (up to 575px) */
+@media (max-width: 575px) {
+  .hero {
+    height: 50vh;
+    margin-top: 60px;
+  }
+  
+  .hero-content {
+    padding: 1rem;
+  }
+  
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  
+  .hero p {
+    font-size: 0.9rem;
+  }
+  
+  .btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  
+  .features {
+    padding: 2rem 0;
+  }
+  
+  .features .container {
+    padding: 0 1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .feature-card {
+    padding: 1.5rem;
+  }
+  
+  .popular-brands {
+    padding: 2rem 0;
+  }
+  
+  .popular-brands .container {
+    padding: 0 1rem;
+  }
+  
+  .brands-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .brand-card {
+    padding: 1.5rem;
+  }
+  
+  .products-container {
+    padding: 0 1rem;
+    margin-top: 80px;
+  }
+  
+  .filters {
+    padding: 1rem;
+  }
+  
+  .filters form {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-buttons {
+    flex-direction: column;
+  }
+  
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .product-card {
+    margin-bottom: 1rem;
+  }
+  
+  .product-info {
+    padding: 1rem;
+  }
+  
+  .contact-container {
+    padding: 0 1rem;
+    margin-top: 80px;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .contact-info,
+  .contact-form {
+    padding: 1rem;
+  }
+  
+  footer {
+    padding: 2rem 0;
+  }
+  
+  footer .container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+  }
+  
+  .admin-sidebar {
+    width: 50px;
+  }
+  
+  .admin-sidebar .admin-brand span,
+  .admin-sidebar .admin-nav li a span {
+    display: none;
+  }
+  
+  .admin-sidebar .admin-nav li a {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .admin-sidebar .admin-nav li a i {
+    margin-right: 0;
+    width: auto;
+  }
+  
+  .admin-content {
+    margin-left: 50px;
+    padding: 0.5rem;
+  }
+  
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .admin-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .admin-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-card {
+    padding: 1rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-form {
+    padding: 1rem;
+  }
+  
+  .admin-table {
+    font-size: 0.8rem;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    padding: 0.3rem;
+  }
+  
+  .admin-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .btn-action {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Extra Small Mobile (up to 375px) */
+@media (max-width: 375px) {
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+  
+  .hero p {
+    font-size: 0.8rem;
+  }
+  
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .admin-sidebar {
+    width: 40px;
+  }
+  
+  .admin-content {
+    margin-left: 40px;
+  }
+  
+  .admin-sidebar .admin-nav li a i {
+    font-size: 1rem;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    height: 100vh;
+    margin-top: 0;
+  }
+  
+  .hero-content {
+    padding: 1rem;
+  }
+  
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+  
+  .hero p {
+    font-size: 0.8rem;
+  }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .product-image img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .navbar,
+  .mobile-nav-toggle,
+  .admin-sidebar,
+  .admin-actions,
+  .filter-buttons {
+    display: none !important;
+  }
+  
+  .admin-content {
+    margin-left: 0 !important;
+  }
+  
+  .hero {
+    height: auto;
+    margin-top: 0;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* -----------------------------
    Animations
    ----------------------------- */
 @keyframes fadeIn {
@@ -615,4 +1432,144 @@ footer .container {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Mobile Navigation JavaScript Support */
+.nav-links {
+  transition: all 0.3s ease;
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus styles for better accessibility */
+.btn:focus,
+.nav-links a:focus,
+.admin-nav a:focus {
+  outline: 2px solid #243c55;
+  outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+  
+  .navbar,
+  .admin-card,
+  .product-card,
+  .contact-form {
+    background-color: #2d2d2d;
+    color: #ffffff;
+  }
+  
+  .admin-table th {
+    background-color: #3d3d3d;
+  }
+}
+
+/* Contact Person Sections */
+.contact-person-section {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.contact-person-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.contact-person-section h3 {
+    color: #333;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.contact-person-section h3 i {
+    color: #243c55;
+    font-size: 1.1rem;
+}
+
+.contact-person-section .contact-details {
+    margin: 0;
+    padding: 0;
+}
+
+.contact-person-section .contact-details li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.contact-person-section .contact-details li:last-child {
+    border-bottom: none;
+}
+
+/* Footer Contact Person Sections */
+.footer-contact-person {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.footer-contact-person:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.footer-contact-person h4 {
+    color: #333;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-contact-person h4 i {
+    color: #243c55;
+}
+
+.footer-contact-person ul {
+    margin: 0;
+    padding: 0;
+}
+
+.footer-contact-person ul li {
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+/* Responsive adjustments for contact sections */
+@media (max-width: 767px) {
+    .contact-person-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .contact-person-section h3 {
+        font-size: 1.1rem;
+    }
+    
+    .footer-contact-person h4 {
+        font-size: 0.9rem;
+    }
+    
+    .footer-contact-person ul li {
+        font-size: 0.8rem;
+    }
 }

@@ -1,8 +1,4 @@
 <?php
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -15,27 +11,10 @@ try {
     // Include database connection
     if (file_exists('../includes/db_connect.php')) {
         require_once '../includes/db_connect.php';
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Error:</strong> db_connect.php not found";
-        echo "</div>";
     }
 
     if (file_exists('../includes/auth.php')) {
         require_once '../includes/auth.php';
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Error:</strong> auth.php not found";
-        echo "</div>";
-    }
-
-    // Test database connection
-    if (isset($conn) && !$conn->connect_error) {
-        echo "<div style='background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; margin: 10px; border-radius: 4px;'>✅ Database connection successful</div>";
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Database Error:</strong> Connection failed";
-        echo "</div>";
     }
 
     // Require login
@@ -147,9 +126,8 @@ try {
     }
 
 } catch (Exception $e) {
-    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-    echo "<strong>Fatal Error:</strong> " . htmlspecialchars($e->getMessage());
-    echo "</div>";
+    // Handle error silently or log it
+    error_log("Error in admin/inventory.php: " . $e->getMessage());
 }
 
 // Flush any output so far
@@ -158,10 +136,6 @@ ob_flush();
 // Include header
 if (file_exists('includes/header.php')) {
     include_once 'includes/header.php';
-} else {
-    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-    echo "<strong>Error:</strong> header.php not found";
-    echo "</div>";
 }
 ?>
 

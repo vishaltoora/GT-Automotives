@@ -1,8 +1,4 @@
 <?php
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -15,27 +11,10 @@ try {
     // Include database connection
     if (file_exists('../includes/db_connect.php')) {
         require_once '../includes/db_connect.php';
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Error:</strong> db_connect.php not found";
-        echo "</div>";
     }
 
     if (file_exists('../includes/auth.php')) {
         require_once '../includes/auth.php';
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Error:</strong> auth.php not found";
-        echo "</div>";
-    }
-
-    // Test database connection
-    if (isset($conn) && !$conn->connect_error) {
-        echo "<div style='background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; margin: 10px; border-radius: 4px;'>✅ Database connection successful</div>";
-    } else {
-        echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-        echo "<strong>Database Error:</strong> Connection failed";
-        echo "</div>";
     }
 
     // Require login
@@ -47,8 +26,19 @@ try {
     // Initialize variables
     $brands = [];
     $locations = [];
+    $sizes = [];
     $errors = [];
     $success_message = '';
+    
+    // Initialize form variables
+    $brand_id = 0;
+    $location_id = 0;
+    $name = '';
+    $size = '';
+    $price = 0;
+    $description = '';
+    $stock_quantity = 0;
+    $condition = 'new';
 
     // Fetch brands for dropdown
     if (isset($conn)) {
@@ -57,10 +47,6 @@ try {
             while ($row = $brands_result->fetch_assoc()) {
                 $brands[] = $row;
             }
-        } else {
-            echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-            echo "<strong>Error:</strong> Could not fetch brands: " . $conn->error;
-            echo "</div>";
         }
 
         // Fetch locations for dropdown
@@ -69,10 +55,14 @@ try {
             while ($row = $locations_result->fetch_assoc()) {
                 $locations[] = $row;
             }
-        } else {
-            echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-            echo "<strong>Error:</strong> Could not fetch locations: " . $conn->error;
-            echo "</div>";
+        }
+
+        // Fetch available sizes for dropdown
+        $sizes_result = $conn->query('SELECT id, name, description FROM sizes WHERE is_active = 1 ORDER BY sort_order ASC, name ASC');
+        if ($sizes_result) {
+            while ($row = $sizes_result->fetch_assoc()) {
+                $sizes[] = $row;
+            }
         }
     }
 
@@ -80,6 +70,7 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Get form data
         $brand_id = intval($_POST['brand_id'] ?? 0);
+        $location_id = intval($_POST['location_id'] ?? 0);
         $name = trim($_POST['name'] ?? '');
         $size = trim($_POST['size'] ?? '');
         $price = floatval($_POST['price'] ?? 0);
@@ -92,8 +83,12 @@ try {
             $errors[] = 'Brand is required';
         }
         
+        if ($location_id <= 0) {
+            $errors[] = 'Location is required';
+        }
+        
         if (empty($name)) {
-            $errors[] = 'Product name is required';
+            $errors[] = 'Product type is required';
         }
         
         if (empty($size)) {
@@ -114,17 +109,18 @@ try {
         
         // If no errors, insert the product
         if (empty($errors) && isset($conn)) {
-            $insert_query = "INSERT INTO tires (brand_id, name, size, price, description, stock_quantity, `condition`) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $insert_query = "INSERT INTO tires (brand_id, name, size, price, description, stock_quantity, `condition`, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($insert_query);
             
             if ($stmt) {
-                $stmt->bind_param("issdsis", $brand_id, $name, $size, $price, $description, $stock_quantity, $condition);
+                $stmt->bind_param("issdsisi", $brand_id, $name, $size, $price, $description, $stock_quantity, $condition, $location_id);
                 
                 if ($stmt->execute()) {
                     $success_message = "Product added successfully! Product ID: " . $conn->insert_id;
                     
                     // Clear form data after successful submission
                     $brand_id = 0;
+                    $location_id = 0;
                     $name = '';
                     $size = '';
                     $price = 0;
@@ -143,9 +139,8 @@ try {
     }
 
 } catch (Exception $e) {
-    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-    echo "<strong>Fatal Error:</strong> " . htmlspecialchars($e->getMessage());
-    echo "</div>";
+    // Handle error silently or log it
+    error_log("Error in add_product.php: " . $e->getMessage());
 }
 
 // Flush any output so far
@@ -154,20 +149,11 @@ ob_flush();
 // Include header
 if (file_exists('includes/header.php')) {
     include_once 'includes/header.php';
-} else {
-    echo "<div style='background: #ffebee; border: 1px solid #f44336; padding: 10px; margin: 10px; border-radius: 4px;'>";
-    echo "<strong>Error:</strong> header.php not found";
-    echo "</div>";
 }
 ?>
 
 <div class="admin-content">
-    <div class="admin-header">
-        <h1>Add New Product</h1>
-        <a href="products.php" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Products
-        </a>
-    </div>
+   
 
     <?php if (!empty($success_message)): ?>
         <div class="alert alert-success">
@@ -200,29 +186,56 @@ if (file_exists('includes/header.php')) {
             </div>
 
             <div class="form-group">
-                <label for="name">Product Name *</label>
-                <input type="text" name="name" id="name" value="<?php echo htmlspecialchars($name ?? ''); ?>" required>
+                <label for="location_id">Location *</label>
+                <select name="location_id" id="location_id" required>
+                    <option value="">Select Location</option>
+                    <?php foreach ($locations as $location): ?>
+                        <option value="<?php echo $location['id']; ?>" <?php echo ($location_id == $location['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($location['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label for="size">Size *</label>
-                <input type="text" name="size" id="size" value="<?php echo htmlspecialchars($size ?? ''); ?>" placeholder="e.g., 225/45R17" required>
+                <label for="name">Product Type *</label>
+                <select name="name" id="name" required>
+                    <option value="">Select Product Type</option>
+                    <option value="Winter Tires" <?php echo ($name == 'Winter Tires') ? 'selected' : ''; ?>>❄️ Winter Tires</option>
+                    <option value="Summer Tires" <?php echo ($name == 'Summer Tires') ? 'selected' : ''; ?>>☀️ Summer Tires</option>
+                    <option value="All Season Tires" <?php echo ($name == 'All Season Tires') ? 'selected' : ''; ?>>🌦️ All Season Tires</option>
+                    <option value="Studded Tires" <?php echo ($name == 'Studded Tires') ? 'selected' : ''; ?>>🔩 Studded Tires</option>
+                </select>
             </div>
 
+            <div class="form-group">
+                <label for="size">Size *</label>
+                <select name="size" id="size" required>
+                    <option value="">Select Size</option>
+                    <?php foreach ($sizes as $s): ?>
+                        <option value="<?php echo htmlspecialchars($s['name']); ?>" <?php echo ($size == $s['name']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($s['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
             <div class="form-group">
                 <label for="price">Price *</label>
                 <input type="number" name="price" id="price" step="0.01" min="0" value="<?php echo htmlspecialchars($price ?? ''); ?>" required>
             </div>
-        </div>
 
-        <div class="form-row">
             <div class="form-group">
                 <label for="stock_quantity">Stock Quantity</label>
                 <input type="number" name="stock_quantity" id="stock_quantity" min="0" value="<?php echo htmlspecialchars($stock_quantity ?? 0); ?>">
             </div>
+        </div>
 
+        <div class="form-row">
             <div class="form-group">
                 <label for="condition">Condition</label>
                 <select name="condition" id="condition">

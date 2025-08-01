@@ -1,3 +1,46 @@
+# Manual Deployment Guide - Location.php Production Fix
+
+## 🚀 **Deployment Options**
+
+### **Option 1: Automated Deployment (Recommended)**
+
+```bash
+./deploy_locations_fix.sh
+```
+
+### **Option 2: Manual Deployment**
+
+Follow the steps below if the automated script doesn't work for your environment.
+
+## 📁 **Files to Deploy**
+
+The following files have been fixed and need to be deployed to production:
+
+1. **admin/locations.php** - Main locations management page
+2. **admin/add_location.php** - Add new location functionality
+3. **admin/edit_location.php** - Edit existing location functionality
+
+## 🔧 **Manual Deployment Steps**
+
+### **Step 1: Backup Current Files**
+
+```bash
+# Create backup directory
+mkdir -p /tmp/gt_automotives_backup_$(date +%Y%m%d_%H%M%S)
+
+# Backup current files (adjust path to your production directory)
+cp /path/to/production/admin/locations.php /tmp/backup/
+cp /path/to/production/admin/add_location.php /tmp/backup/
+cp /path/to/production/admin/edit_location.php /tmp/backup/
+```
+
+### **Step 2: Deploy Fixed Files**
+
+**Copy the following files from your local repository to production:**
+
+#### **File 1: admin/locations.php**
+
+```php
 <?php
 // Enable error reporting for debugging
 error_reporting(E_ALL);
@@ -104,27 +147,55 @@ if (file_exists('includes/header.php')) {
                         <?php echo ($location['is_active'] == 1) ? 'Active' : 'Inactive'; ?>
                     </span>
                 </div>
-                
+
                 <div class="location-details">
+                    <?php if (!empty($location['description'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span><?php echo htmlspecialchars($location['description']); ?></span>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="detail-item">
                         <i class="fas fa-map-marker-alt"></i>
                         <span><?php echo htmlspecialchars($location['address']); ?></span>
                     </div>
-                    
-                    <?php if (!empty($location['phone'])): ?>
+
+                    <?php if (!empty($location['contact_person'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-user"></i>
+                            <span><?php echo htmlspecialchars($location['contact_person']); ?></span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($location['contact_phone'])): ?>
                         <div class="detail-item">
                             <i class="fas fa-phone"></i>
-                            <span><?php echo htmlspecialchars($location['phone']); ?></span>
+                            <span><?php echo htmlspecialchars($location['contact_phone']); ?></span>
                         </div>
                     <?php endif; ?>
-                    
-                    <?php if (!empty($location['email'])): ?>
+
+                    <?php if (!empty($location['contact_email'])): ?>
                         <div class="detail-item">
                             <i class="fas fa-envelope"></i>
-                            <span><?php echo htmlspecialchars($location['email']); ?></span>
+                            <span><?php echo htmlspecialchars($location['contact_email']); ?></span>
                         </div>
                     <?php endif; ?>
-                    
+
+                    <?php if (!empty($location['phone'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-phone-alt"></i>
+                            <span>General: <?php echo htmlspecialchars($location['phone']); ?></span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($location['email'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-envelope-open"></i>
+                            <span>General: <?php echo htmlspecialchars($location['email']); ?></span>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if (!empty($location['hours'])): ?>
                         <div class="detail-item">
                             <i class="fas fa-clock"></i>
@@ -132,7 +203,7 @@ if (file_exists('includes/header.php')) {
                         </div>
                     <?php endif; ?>
                 </div>
-                
+
                 <div class="location-actions">
                     <a href="edit_location.php?id=<?php echo $location['id']; ?>" class="btn btn-sm btn-warning">
                         <i class="fas fa-edit"></i> Edit
@@ -330,4 +401,82 @@ if (file_exists('includes/header.php')) {
 if (file_exists('includes/footer.php')) {
     include_once 'includes/footer.php';
 }
-?> 
+?>
+```
+
+### **Step 3: Set File Permissions**
+
+```bash
+chmod 644 /path/to/production/admin/locations.php
+chmod 644 /path/to/production/admin/add_location.php
+chmod 644 /path/to/production/admin/edit_location.php
+```
+
+## 🧪 **Post-Deployment Testing**
+
+### **1. Test Database Connection**
+
+Access: `https://yourdomain.com/verify_deployment.php`
+
+### **2. Test Locations Page**
+
+Access: `https://yourdomain.com/admin/locations.php`
+
+### **3. Test Add Location**
+
+- Navigate to locations page
+- Click "Add New Location"
+- Fill out the form and submit
+- Verify the location appears in the list
+
+### **4. Test Edit Location**
+
+- Click "Edit" on an existing location
+- Modify some fields and save
+- Verify changes are saved correctly
+
+## 🔍 **Troubleshooting**
+
+### **If the page doesn't load:**
+
+1. Check error logs: `/var/log/apache2/error.log`
+2. Verify file permissions
+3. Check database connection
+4. Ensure all required files exist
+
+### **If database errors occur:**
+
+1. Verify database credentials in `includes/db_connect.php`
+2. Check if MySQL service is running
+3. Test database connection manually
+
+### **If styling issues:**
+
+1. Clear browser cache
+2. Check if CSS files are accessible
+3. Verify Font Awesome is loading
+
+## 📞 **Support**
+
+If you encounter any issues during deployment:
+
+1. **Check the backup files** in `/tmp/gt_automotives_backup_*`
+2. **Run the verification script** at `/verify_deployment.php`
+3. **Review error logs** for specific error messages
+4. **Contact support** with specific error details
+
+## ✅ **Success Indicators**
+
+After successful deployment, you should see:
+
+- ✅ Locations page loads without errors
+- ✅ All location data displays correctly
+- ✅ Add/Edit/Delete functionality works
+- ✅ Responsive design works on all devices
+- ✅ No PHP syntax errors in logs
+
+---
+
+**Deployment Status:** Ready for Production
+**Last Updated:** $(date)
+**Version:** 1.0

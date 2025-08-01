@@ -143,20 +143,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Format the date and time for database
         $created_at = $_POST['created_date'] . ' ' . $_POST['created_time'] . ':00';
         
-        $update_stmt->bind_param("sssssssssssss",
-            $_POST['customer_name'],
-            $_POST['customer_business_name'] ?? '',
-            $_POST['customer_email'] ?? '',
-            $_POST['customer_phone'] ?? '',
-            $_POST['customer_address'] ?? '',
+        // Store all values in variables for bind_param
+        $customer_name = $_POST['customer_name'];
+        $customer_business_name = $_POST['customer_business_name'] ?? '';
+        $customer_email = $_POST['customer_email'] ?? '';
+        $customer_phone = $_POST['customer_phone'] ?? '';
+        $customer_address = $_POST['customer_address'] ?? '';
+        $payment_method = $_POST['payment_method'] ?? 'cash_with_invoice';
+        $payment_status = $_POST['payment_status'] ?? 'pending';
+        $notes = $_POST['notes'] ?? '';
+        
+        $update_stmt->bind_param("sssssssssssssss",
+            $customer_name,
+            $customer_business_name,
+            $customer_email,
+            $customer_phone,
+            $customer_address,
             $gst_rate,
             $gst_amount,
             $pst_rate,
             $pst_amount,
             $total_amount,
-            $_POST['payment_method'] ?? 'cash_with_invoice',
-            $_POST['payment_status'] ?? 'pending',
-            $_POST['notes'] ?? '',
+            $payment_method,
+            $payment_status,
+            $notes,
             $created_at,
             $sale_id
         );

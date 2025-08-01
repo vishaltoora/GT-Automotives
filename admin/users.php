@@ -84,6 +84,7 @@ include_once 'includes/header.php';
 ?>
 
 <div class="admin-container">
+    <!-- Enhanced Header -->
     <div class="admin-header">
         <div class="header-content">
             <h1><i class="fas fa-users"></i> User Management</h1>
@@ -94,6 +95,7 @@ include_once 'includes/header.php';
         </button>
     </div>
 
+    <!-- Alerts -->
     <?php if (isset($error)): ?>
         <div class="alert alert-danger">
             <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
@@ -106,7 +108,7 @@ include_once 'includes/header.php';
         </div>
     <?php endif; ?>
 
-    <!-- Add User Form (Hidden by default) -->
+    <!-- Add User Modal -->
     <div id="addUserForm" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
@@ -158,81 +160,131 @@ include_once 'includes/header.php';
         </div>
     </div>
 
-    <!-- Users List -->
-    <div class="users-container">
-        <div class="users-header">
-            <h2><i class="fas fa-list"></i> All Users</h2>
-            <div class="users-stats">
-                <span class="stat-item">
-                    <i class="fas fa-users"></i>
-                    <span class="stat-number"><?php echo $users_result->num_rows; ?></span>
-                    <span class="stat-label">Total Users</span>
-                </span>
-            </div>
-        </div>
-        
-        <?php if ($users_result->num_rows > 0): ?>
-            <div class="users-grid">
-                <?php while ($user = $users_result->fetch_assoc()): ?>
-                    <div class="user-card">
-                        <div class="user-card-header">
-                            <div class="user-avatar">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="user-info">
-                                <h3 class="user-name">
-                                    <?php echo htmlspecialchars($user['username']); ?>
-                                    <?php if ($user['id'] == $_SESSION['user_id']): ?>
-                                        <span class="badge badge-primary">You</span>
-                                    <?php endif; ?>
-                                </h3>
-                                <p class="user-email"><?php echo htmlspecialchars($user['email']); ?></p>
-                            </div>
-                            <div class="user-role">
-                                <span class="badge <?php echo $user['is_admin'] ? 'badge-admin' : 'badge-user'; ?>">
-                                    <?php echo $user['is_admin'] ? 'Admin' : 'User'; ?>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="user-card-body">
-                            <div class="user-details">
-                                <div class="detail-item">
-                                    <span class="detail-label">ID:</span>
-                                    <span class="detail-value">#<?php echo $user['id']; ?></span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Created:</span>
-                                    <span class="detail-value"><?php echo date('M j, Y', strtotime($user['created_at'])); ?></span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="user-card-actions">
-                            <?php if ($user['id'] != $_SESSION['user_id']): ?>
-                                <button class="btn-action btn-delete" 
-                                        onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            <?php else: ?>
-                                <span class="text-muted">Current User</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endwhile; ?>
-            </div>
-        <?php else: ?>
-            <div class="empty-state">
-                <div class="empty-icon">
+    <!-- Users Dashboard -->
+    <div class="users-dashboard">
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">
                     <i class="fas fa-users"></i>
                 </div>
-                <h3>No Users Found</h3>
-                <p>Get started by adding the first user to your system.</p>
-                <button class="btn btn-primary" onclick="showAddUserForm()">
-                    <i class="fas fa-plus"></i> Add First User
-                </button>
+                <div class="stat-content">
+                    <div class="stat-number"><?php echo $users_result->num_rows; ?></div>
+                    <div class="stat-label">Total Users</div>
+                </div>
             </div>
-        <?php endif; ?>
+            
+            <?php
+            $admin_query = "SELECT COUNT(*) as admin_count FROM users WHERE is_admin = 1";
+            $admin_result = $conn->query($admin_query);
+            $admin_count = $admin_result->fetch_assoc()['admin_count'];
+            ?>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number"><?php echo $admin_count; ?></div>
+                    <div class="stat-label">Administrators</div>
+                </div>
+            </div>
+            
+            <?php
+            $user_count = $users_result->num_rows - $admin_count;
+            ?>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number"><?php echo $user_count; ?></div>
+                    <div class="stat-label">Regular Users</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="users-table-container">
+            <div class="table-header">
+                <h2><i class="fas fa-list"></i> All Users</h2>
+                <div class="table-actions">
+                    <button class="btn btn-primary" onclick="showAddUserForm()">
+                        <i class="fas fa-plus"></i> Add User
+                    </button>
+                </div>
+            </div>
+            
+            <?php if ($users_result->num_rows > 0): ?>
+                <div class="table-responsive">
+                    <table class="admin-table users-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                            // Reset result pointer
+                            $users_result->data_seek(0);
+                            while ($user = $users_result->fetch_assoc()): 
+                            ?>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div class="user-details">
+                                                <div class="user-name">
+                                                    <?php echo htmlspecialchars($user['username']); ?>
+                                                    <?php if ($user['id'] == $_SESSION['user_id']): ?>
+                                                        <span class="badge badge-primary">You</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="user-id">ID: #<?php echo $user['id']; ?></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                    <td>
+                                        <span class="badge <?php echo $user['is_admin'] ? 'badge-admin' : 'badge-user'; ?>">
+                                            <?php echo $user['is_admin'] ? 'Admin' : 'User'; ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
+                                    <td>
+                                        <?php if ($user['id'] != $_SESSION['user_id']): ?>
+                                            <button class="btn-action btn-delete" 
+                                                    onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')"
+                                                    title="Delete User">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        <?php else: ?>
+                                            <span class="text-muted">Current User</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>No Users Found</h3>
+                    <p>Get started by adding the first user to your system.</p>
+                    <button class="btn btn-primary" onclick="showAddUserForm()">
+                        <i class="fas fa-plus"></i> Add First User
+                    </button>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -279,44 +331,247 @@ document.addEventListener('click', function(event) {
 </script>
 
 <style>
-/* Header Styles */
+/* Enhanced Header Styles */
 .admin-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
+    padding: 2rem;
+    background: #243c55;
+    border-radius: 15px;
     color: white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(36, 60, 85, 0.2);
 }
 
 .header-content h1 {
     margin: 0 0 0.5rem 0;
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-content h1 i {
+    font-size: 1.8rem;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .header-subtitle {
     margin: 0;
+    font-size: 1.1rem;
     opacity: 0.9;
-    font-size: 1rem;
+    font-weight: 400;
 }
 
 .add-user-btn {
-    background: rgba(255,255,255,0.2);
-    border: 2px solid rgba(255,255,255,0.3);
-    color: white;
     padding: 0.75rem 1.5rem;
+    font-size: 1rem;
     font-weight: 600;
+    border-radius: 8px;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .add-user-btn:hover {
-    background: rgba(255,255,255,0.3);
-    border-color: rgba(255,255,255,0.5);
     transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Stats Cards */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background: #243c55;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #243c55;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Users Table */
+.users-table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table th {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.users-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+}
+
+.users-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* User Info in Table */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: #243c55;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-id {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Badges */
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-primary {
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.badge-admin {
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.badge-user {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* Actions */
+.btn-action {
+    padding: 0.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-delete {
+    background: #ffebee;
+    color: #b71c1c;
+}
+
+.btn-delete:hover {
+    background: #ffcdd2;
+    transform: scale(1.05);
 }
 
 /* Modal Styles */
@@ -324,37 +579,24 @@ document.addEventListener('click', function(event) {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     z-index: 1000;
     backdrop-filter: blur(5px);
 }
 
 .modal-content {
     background: white;
-    border-radius: 12px;
-    padding: 0;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .modal-header {
@@ -362,31 +604,33 @@ document.addEventListener('click', function(event) {
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem 2rem;
-    border-bottom: 1px solid #eee;
-    background: #f8f9fa;
-    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid #e9ecef;
+    background: #243c55;
+    color: white;
+    border-radius: 15px 15px 0 0;
 }
 
 .modal-header h2 {
     margin: 0;
-    color: #333;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .modal-close {
     background: none;
     border: none;
-    font-size: 1.5rem;
-    color: #666;
+    color: white;
+    font-size: 1.2rem;
     cursor: pointer;
     padding: 0.5rem;
-    border-radius: 50%;
-    transition: all 0.3s ease;
+    border-radius: 6px;
+    transition: background 0.3s ease;
 }
 
 .modal-close:hover {
-    background: #f0f0f0;
-    color: #333;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* Form Styles */
@@ -412,7 +656,8 @@ document.addEventListener('click', function(event) {
     color: #333;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 0.75rem;
     border: 2px solid #e9ecef;
@@ -421,230 +666,68 @@ document.addEventListener('click', function(event) {
     transition: border-color 0.3s ease;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #243c55;
 }
 
 .checkbox-label {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
     cursor: pointer;
     font-weight: 500;
-    color: #333;
 }
 
 .checkbox-label input[type="checkbox"] {
     width: auto;
-    margin-right: 0.75rem;
-    transform: scale(1.2);
+    margin: 0;
 }
 
 .form-actions {
     display: flex;
     gap: 1rem;
+    justify-content: flex-end;
     margin-top: 2rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #e9ecef;
 }
 
-/* Users Container */
-.users-container {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.users-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #f8f9fa;
-}
-
-.users-header h2 {
-    margin: 0;
-    color: #333;
-    font-size: 1.5rem;
-}
-
-.users-stats {
-    display: flex;
-    gap: 1rem;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1rem;
-    background: #f8f9fa;
+/* Alert Styles */
+.alert {
+    padding: 1rem 1.5rem;
     border-radius: 8px;
-    min-width: 100px;
-}
-
-.stat-number {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #667eea;
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 0.25rem;
-}
-
-/* Users Grid */
-.users-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
-}
-
-.user-card {
-    background: white;
-    border: 2px solid #f8f9fa;
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.user-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
-}
-
-.user-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    border-color: #667eea;
-}
-
-.user-card-header {
+    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
+    font-weight: 500;
+    transition: opacity 0.3s ease;
 }
 
-.user-avatar {
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.2rem;
-    margin-right: 1rem;
+.alert-danger {
+    background: #ffebee;
+    color: #b71c1c;
+    border: 1px solid #ffcdd2;
 }
 
-.user-info {
-    flex: 1;
-}
-
-.user-name {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.user-email {
-    margin: 0;
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.user-role {
-    margin-left: auto;
-}
-
-.user-card-body {
-    margin-bottom: 1rem;
-}
-
-.user-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.detail-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.detail-label {
-    font-size: 0.8rem;
-    color: #666;
-    margin-bottom: 0.25rem;
-}
-
-.detail-value {
-    font-weight: 600;
-    color: #333;
-}
-
-.user-card-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 1rem;
-    border-top: 1px solid #f8f9fa;
-}
-
-/* Badge Styles */
-.badge {
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.badge-admin {
-    background: linear-gradient(135deg, #4caf50, #45a049);
-    color: white;
-}
-
-.badge-user {
-    background: linear-gradient(135deg, #2196f3, #1976d2);
-    color: white;
-}
-
-.badge-primary {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
-    color: white;
-    font-size: 0.7rem;
-    padding: 0.25rem 0.5rem;
+.alert-success {
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #c8e6c9;
 }
 
 /* Empty State */
 .empty-state {
     text-align: center;
-    padding: 3rem 2rem;
+    padding: 4rem 2rem;
     color: #666;
 }
 
 .empty-icon {
     font-size: 4rem;
-    color: #ddd;
+    color: #ccc;
     margin-bottom: 1rem;
 }
 
@@ -656,55 +739,7 @@ document.addEventListener('click', function(event) {
 
 .empty-state p {
     margin: 0 0 2rem 0;
-    font-size: 1rem;
-}
-
-/* Button Styles */
-.btn-action {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.btn-delete {
-    background: linear-gradient(135deg, #f44336, #d32f2f);
-    color: white;
-}
-
-.btn-delete:hover {
-    background: linear-gradient(135deg, #d32f2f, #b71c1c);
-    transform: translateY(-1px);
-}
-
-.text-muted {
-    color: #6c757d;
-    font-style: italic;
-    font-size: 0.9rem;
-}
-
-/* Alert Styles */
-.alert {
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    border-left: 4px solid;
-    transition: opacity 0.5s ease;
-}
-
-.alert-success {
-    background: #e8f5e9;
-    color: #1b5e20;
-    border-left-color: #4caf50;
-}
-
-.alert-danger {
-    background: #ffebee;
-    color: #b71c1c;
-    border-left-color: #f44336;
+    font-size: 1.1rem;
 }
 
 /* Responsive Design */
@@ -715,14 +750,33 @@ document.addEventListener('click', function(event) {
         text-align: center;
     }
     
-    .users-header {
+    .header-content h1 {
+        font-size: 1.8rem;
+    }
+    
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-header {
         flex-direction: column;
         gap: 1rem;
         text-align: center;
     }
     
-    .users-grid {
-        grid-template-columns: 1fr;
+    .users-table {
+        font-size: 0.9rem;
+    }
+    
+    .users-table th,
+    .users-table td {
+        padding: 0.75rem;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
     }
     
     .form-row {
@@ -733,8 +787,33 @@ document.addEventListener('click', function(event) {
         flex-direction: column;
     }
     
-    .user-details {
-        grid-template-columns: 1fr;
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-header {
+        padding: 1.5rem;
+    }
+    
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
     }
 }
 </style>
