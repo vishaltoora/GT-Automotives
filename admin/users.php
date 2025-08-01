@@ -15,106 +15,159 @@ requireAdmin();
 // Set page title
 $page_title = 'Manage Users';
 
+// Initialize variables
+$error = '';
+$success = '';
+$users_result = null;
+$admin_count = 0;
+$user_count = 0;
+
 // Handle user actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
-            case 'add':
-                $username = trim($_POST['username']);
-                $first_name = trim($_POST['first_name']);
-                $last_name = trim($_POST['last_name']);
-                $email = trim($_POST['email']);
-                $password = $_POST['password'];
-                $is_admin = isset($_POST['is_admin']) ? 1 : 0;
-                
-                // Validate input - username, first_name, last_name, and password are required
-                if (empty($username) || empty($first_name) || empty($last_name) || empty($password)) {
-                    $error = "Username, first name, last name, and password are required.";
-                } else {
-                    // Check if username already exists
-                    $check_query = "SELECT id FROM users WHERE username = ?";
-                    $check_stmt = $conn->prepare($check_query);
-                    $check_stmt->bind_param("s", $username);
-                    $check_stmt->execute();
+        try {
+            switch ($_POST['action']) {
+                case 'add':
+                    $username = trim($_POST['username'] ?? '');
+                    $first_name = trim($_POST['first_name'] ?? '');
+                    $last_name = trim($_POST['last_name'] ?? '');
+                    $email = trim($_POST['email'] ?? '');
+                    $password = $_POST['password'] ?? '';
+                    $is_admin = isset($_POST['is_admin']) ? 1 : 0;
                     
-                    if ($check_stmt->get_result()->num_rows > 0) {
-                        $error = "Username already exists.";
+                    // Validate input - username, first_name, last_name, and password are required
+                    if (empty($username) || empty($first_name) || empty($last_name) || empty($password)) {
+                        $error = "Username, first name, last name, and password are required.";
                     } else {
-                        // Hash password and insert user
-                        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                        $insert_query = "INSERT INTO users (username, first_name, last_name, password, email, is_admin) VALUES (?, ?, ?, ?, ?, ?)";
-                        $insert_stmt = $conn->prepare($insert_query);
-                        $insert_stmt->bind_param("sssssi", $username, $first_name, $last_name, $hashed_password, $email, $is_admin);
-                        
-                        if ($insert_stmt->execute()) {
-                            $success = "User created successfully!";
+                        // Check if username already exists
+                        $check_query = "SELECT id FROM users WHERE username = ?";
+                        $check_stmt = $conn->prepare($check_query);
+                        if ($check_stmt) {
+                            $check_stmt->bind_param("s", $username);
+                            $check_stmt->execute();
+                            
+                            if ($check_stmt->get_result()->num_rows > 0) {
+                                $error = "Username already exists.";
+                            } else {
+                                // Hash password and insert user
+                                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                                $insert_query = "INSERT INTO users (username, first_name, last_name, password, email, is_admin) VALUES (?, ?, ?, ?, ?, ?)";
+                                $insert_stmt = $conn->prepare($insert_query);
+                                if ($insert_stmt) {
+                                    $insert_stmt->bind_param("sssssi", $username, $first_name, $last_name, $hashed_password, $email, $is_admin);
+                                    
+                                    if ($insert_stmt->execute()) {
+                                        $success = "User created successfully!";
+                                    } else {
+                                        $error = "Error creating user: " . $conn->error;
+                                    }
+                                } else {
+                                    $error = "Error preparing insert statement.";
+                                }
+                            }
                         } else {
-                            $error = "Error creating user: " . $conn->error;
+                            $error = "Error preparing check statement.";
                         }
                     }
-                }
-                break;
-                
-            case 'edit':
-                $user_id = (int)$_POST['user_id'];
-                $username = trim($_POST['username']);
-                $first_name = trim($_POST['first_name']);
-                $last_name = trim($_POST['last_name']);
-                $email = trim($_POST['email']);
-                $is_admin = isset($_POST['is_admin']) ? 1 : 0;
-                
-                // Validate input
-                if (empty($username) || empty($first_name) || empty($last_name)) {
-                    $error = "Username, first name, and last name are required.";
-                } else {
-                    // Check if username already exists for other users
-                    $check_query = "SELECT id FROM users WHERE username = ? AND id != ?";
-                    $check_stmt = $conn->prepare($check_query);
-                    $check_stmt->bind_param("si", $username, $user_id);
-                    $check_stmt->execute();
+                    break;
                     
-                    if ($check_stmt->get_result()->num_rows > 0) {
-                        $error = "Username already exists.";
+                case 'edit':
+                    $user_id = (int)($_POST['user_id'] ?? 0);
+                    $username = trim($_POST['username'] ?? '');
+                    $first_name = trim($_POST['first_name'] ?? '');
+                    $last_name = trim($_POST['last_name'] ?? '');
+                    $email = trim($_POST['email'] ?? '');
+                    $is_admin = isset($_POST['is_admin']) ? 1 : 0;
+                    
+                    // Validate input
+                    if (empty($username) || empty($first_name) || empty($last_name)) {
+                        $error = "Username, first name, and last name are required.";
                     } else {
-                        // Update user without password
-                        $update_query = "UPDATE users SET username = ?, first_name = ?, last_name = ?, email = ?, is_admin = ? WHERE id = ?";
-                        $update_stmt = $conn->prepare($update_query);
-                        $update_stmt->bind_param("ssssii", $username, $first_name, $last_name, $email, $is_admin, $user_id);
-                        
-                        if ($update_stmt->execute()) {
-                            $success = "User updated successfully!";
+                        // Check if username already exists for other users
+                        $check_query = "SELECT id FROM users WHERE username = ? AND id != ?";
+                        $check_stmt = $conn->prepare($check_query);
+                        if ($check_stmt) {
+                            $check_stmt->bind_param("si", $username, $user_id);
+                            $check_stmt->execute();
+                            
+                            if ($check_stmt->get_result()->num_rows > 0) {
+                                $error = "Username already exists.";
+                            } else {
+                                // Update user without password
+                                $update_query = "UPDATE users SET username = ?, first_name = ?, last_name = ?, email = ?, is_admin = ? WHERE id = ?";
+                                $update_stmt = $conn->prepare($update_query);
+                                if ($update_stmt) {
+                                    $update_stmt->bind_param("ssssii", $username, $first_name, $last_name, $email, $is_admin, $user_id);
+                                    
+                                    if ($update_stmt->execute()) {
+                                        $success = "User updated successfully!";
+                                    } else {
+                                        $error = "Error updating user: " . $conn->error;
+                                    }
+                                } else {
+                                    $error = "Error preparing update statement.";
+                                }
+                            }
                         } else {
-                            $error = "Error updating user: " . $conn->error;
+                            $error = "Error preparing check statement.";
                         }
                     }
-                }
-                break;
-                
-            case 'delete':
-                $user_id = (int)$_POST['user_id'];
-                
-                // Prevent deleting own account
-                if ($user_id == $_SESSION['user_id']) {
-                    $error = "You cannot delete your own account.";
-                } else {
-                    $delete_query = "DELETE FROM users WHERE id = ?";
-                    $delete_stmt = $conn->prepare($delete_query);
-                    $delete_stmt->bind_param("i", $user_id);
+                    break;
                     
-                    if ($delete_stmt->execute()) {
-                        $success = "User deleted successfully!";
+                case 'delete':
+                    $user_id = (int)($_POST['user_id'] ?? 0);
+                    
+                    // Prevent deleting own account
+                    if ($user_id == ($_SESSION['user_id'] ?? 0)) {
+                        $error = "You cannot delete your own account.";
                     } else {
-                        $error = "Error deleting user: " . $conn->error;
+                        $delete_query = "DELETE FROM users WHERE id = ?";
+                        $delete_stmt = $conn->prepare($delete_query);
+                        if ($delete_stmt) {
+                            $delete_stmt->bind_param("i", $user_id);
+                            
+                            if ($delete_stmt->execute()) {
+                                $success = "User deleted successfully!";
+                            } else {
+                                $error = "Error deleting user: " . $conn->error;
+                            }
+                        } else {
+                            $error = "Error preparing delete statement.";
+                        }
                     }
-                }
-                break;
+                    break;
+            }
+        } catch (Exception $e) {
+            $error = "Database error: " . $e->getMessage();
         }
     }
 }
 
 // Get all users
-$users_query = "SELECT id, username, first_name, last_name, email, is_admin, created_at FROM users ORDER BY created_at DESC";
-$users_result = $conn->query($users_query);
+try {
+    $users_query = "SELECT id, username, first_name, last_name, email, is_admin, created_at FROM users ORDER BY created_at DESC";
+    $users_result = $conn->query($users_query);
+    
+    if ($users_result) {
+        // Get admin count
+        $admin_query = "SELECT COUNT(*) as admin_count FROM users WHERE is_admin = 1";
+        $admin_result = $conn->query($admin_query);
+        if ($admin_result) {
+            $admin_count = $admin_result->fetch_assoc()['admin_count'] ?? 0;
+        }
+        
+        $user_count = $users_result->num_rows - $admin_count;
+    } else {
+        $users_result = null;
+        $admin_count = 0;
+        $user_count = 0;
+    }
+} catch (Exception $e) {
+    error_log("Database error in admin/users.php: " . $e->getMessage());
+    $users_result = null;
+    $admin_count = 0;
+    $user_count = 0;
+}
 
 // Include header
 include_once 'includes/header.php';
@@ -122,13 +175,13 @@ include_once 'includes/header.php';
 
 <div class="admin-container">
     <!-- Alerts -->
-    <?php if (isset($error)): ?>
+    <?php if (!empty($error)): ?>
         <div class="alert alert-danger">
             <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
         </div>
     <?php endif; ?>
 
-    <?php if (isset($success)): ?>
+    <?php if (!empty($success)): ?>
         <div class="alert alert-success">
             <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?>
         </div>
@@ -270,16 +323,11 @@ include_once 'includes/header.php';
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-number"><?php echo $users_result->num_rows; ?></div>
+                    <div class="stat-number"><?php echo $users_result ? $users_result->num_rows : 0; ?></div>
                     <div class="stat-label">Total Users</div>
                 </div>
             </div>
             
-            <?php
-            $admin_query = "SELECT COUNT(*) as admin_count FROM users WHERE is_admin = 1";
-            $admin_result = $conn->query($admin_query);
-            $admin_count = $admin_result->fetch_assoc()['admin_count'];
-            ?>
             <div class="stat-card">
                 <div class="stat-icon">
                     <i class="fas fa-user-shield"></i>
@@ -290,9 +338,6 @@ include_once 'includes/header.php';
                 </div>
             </div>
             
-            <?php
-            $user_count = $users_result->num_rows - $admin_count;
-            ?>
             <div class="stat-card">
                 <div class="stat-icon">
                     <i class="fas fa-user"></i>
@@ -315,7 +360,7 @@ include_once 'includes/header.php';
                 </div>
             </div>
             
-            <?php if ($users_result->num_rows > 0): ?>
+            <?php if ($users_result && $users_result->num_rows > 0): ?>
                 <div class="table-responsive">
                     <table class="admin-table users-table">
                         <thead>
@@ -346,7 +391,7 @@ include_once 'includes/header.php';
                                                     $full_name = trim($user['first_name'] . ' ' . $user['last_name']);
                                                     echo htmlspecialchars($full_name ?: 'No Name Set');
                                                     ?>
-                                                    <?php if ($user['id'] == $_SESSION['user_id']): ?>
+                                                    <?php if ($user['id'] == ($_SESSION['user_id'] ?? 0)): ?>
                                                         <span class="badge badge-primary">You</span>
                                                     <?php endif; ?>
                                                 </div>
@@ -369,7 +414,7 @@ include_once 'includes/header.php';
                                     </td>
                                     <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
                                     <td>
-                                        <?php if ($user['id'] != $_SESSION['user_id']): ?>
+                                        <?php if ($user['id'] != ($_SESSION['user_id'] ?? 0)): ?>
                                             <button class="btn-action btn-edit" 
                                                     onclick="editUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', '<?php echo htmlspecialchars($user['first_name']); ?>', '<?php echo htmlspecialchars($user['last_name']); ?>', '<?php echo htmlspecialchars($user['email']); ?>', <?php echo $user['is_admin']; ?>)"
                                                     title="Edit User">
@@ -443,12 +488,10 @@ function editUser(id, username, firstName, lastName, email, isAdmin) {
 }
 
 function deleteUser(userId, username) {
-    showCustomConfirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`, function(confirmed) {
-        if (confirmed) {
-            document.getElementById('deleteUserId').value = userId;
-            document.getElementById('deleteUserForm').submit();
-        }
-    });
+    if (confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+        document.getElementById('deleteUserId').value = userId;
+        document.getElementById('deleteUserForm').submit();
+    }
 }
 
 // Auto-hide alerts after 5 seconds
