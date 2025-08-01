@@ -272,7 +272,7 @@ if (file_exists('includes/header.php')) {
                             <a href="edit_product.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-warning" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="delete_product.php?id=<?php echo $product['id']; ?>" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this product?')">
+                            <a href="#" class="btn btn-sm btn-danger" title="Delete" onclick="showCustomConfirm('Are you sure you want to delete this product?', function(confirmed) { if(confirmed) window.location.href='delete_product.php?id=<?php echo $product['id']; ?>'; }); return false;">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </div>

@@ -96,7 +96,7 @@ if (file_exists('includes/header.php')) {
                     <a href="edit_location.php?id=<?php echo $location['id']; ?>" class="btn btn-sm btn-warning">
                         <i class="fas fa-edit"></i> Edit
                     </a>
-                    <a href="delete_location.php?id=<?php echo $location['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this location?')">
+                    <a href="#" class="btn btn-sm btn-danger" onclick="showCustomConfirm('Are you sure you want to delete this location?', function(confirmed) { if(confirmed) window.location.href='delete_location.php?id=<?php echo $location['id']; ?>'; }); return false;">
                         <i class="fas fa-trash"></i> Delete
                     </a>
                 </div>

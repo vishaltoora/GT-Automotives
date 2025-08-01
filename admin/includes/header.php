@@ -660,6 +660,184 @@ if ($current_file !== 'login.php') {
             <?php endif; ?>
             
             <script>
+                // Custom Confirmation Dialog System
+                function showCustomConfirm(message, callback) {
+                    // Create modal overlay
+                    const overlay = document.createElement('div');
+                    overlay.className = 'custom-confirm-overlay';
+                    overlay.innerHTML = `
+                        <div class="custom-confirm-modal">
+                            <div class="custom-confirm-content">
+                                <div class="custom-confirm-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <h3>Confirm Action</h3>
+                                <p>${message}</p>
+                                <div class="custom-confirm-buttons">
+                                    <button class="btn btn-secondary custom-confirm-cancel">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                    <button class="btn btn-danger custom-confirm-confirm">
+                                        <i class="fas fa-check"></i> Confirm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add to body
+                    document.body.appendChild(overlay);
+                    
+                    // Add styles
+                    if (!document.getElementById('custom-confirm-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'custom-confirm-styles';
+                        style.textContent = `
+                            .custom-confirm-overlay {
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                bottom: 0;
+                                background: rgba(0, 0, 0, 0.6);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                z-index: 9999;
+                                backdrop-filter: blur(5px);
+                                animation: fadeIn 0.3s ease;
+                            }
+                            
+                            .custom-confirm-modal {
+                                background: white;
+                                border-radius: 15px;
+                                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                                max-width: 400px;
+                                width: 90%;
+                                animation: slideIn 0.3s ease;
+                            }
+                            
+                            .custom-confirm-content {
+                                padding: 2rem;
+                                text-align: center;
+                            }
+                            
+                            .custom-confirm-icon {
+                                font-size: 3rem;
+                                color: #dc3545;
+                                margin-bottom: 1rem;
+                            }
+                            
+                            .custom-confirm-content h3 {
+                                margin: 0 0 1rem 0;
+                                color: #333;
+                                font-size: 1.5rem;
+                                font-weight: 600;
+                            }
+                            
+                            .custom-confirm-content p {
+                                margin: 0 0 2rem 0;
+                                color: #666;
+                                font-size: 1.1rem;
+                                line-height: 1.5;
+                            }
+                            
+                            .custom-confirm-buttons {
+                                display: flex;
+                                gap: 1rem;
+                                justify-content: center;
+                            }
+                            
+                            .custom-confirm-buttons .btn {
+                                padding: 0.75rem 1.5rem;
+                                font-size: 1rem;
+                                font-weight: 500;
+                                border-radius: 8px;
+                                transition: all 0.3s ease;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.5rem;
+                                min-width: 120px;
+                                justify-content: center;
+                            }
+                            
+                            .custom-confirm-buttons .btn:hover {
+                                transform: translateY(-2px);
+                                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                            }
+                            
+                            @keyframes fadeIn {
+                                from { opacity: 0; }
+                                to { opacity: 1; }
+                            }
+                            
+                            @keyframes slideIn {
+                                from {
+                                    opacity: 0;
+                                    transform: translateY(-30px) scale(0.9);
+                                }
+                                to {
+                                    opacity: 1;
+                                    transform: translateY(0) scale(1);
+                                }
+                            }
+                            
+                            @media (max-width: 480px) {
+                                .custom-confirm-modal {
+                                    width: 95%;
+                                    margin: 1rem;
+                                }
+                                
+                                .custom-confirm-content {
+                                    padding: 1.5rem;
+                                }
+                                
+                                .custom-confirm-buttons {
+                                    flex-direction: column;
+                                }
+                                
+                                .custom-confirm-buttons .btn {
+                                    width: 100%;
+                                }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                    
+                    // Handle button clicks
+                    const cancelBtn = overlay.querySelector('.custom-confirm-cancel');
+                    const confirmBtn = overlay.querySelector('.custom-confirm-confirm');
+                    
+                    cancelBtn.addEventListener('click', () => {
+                        document.body.removeChild(overlay);
+                        if (callback) callback(false);
+                    });
+                    
+                    confirmBtn.addEventListener('click', () => {
+                        document.body.removeChild(overlay);
+                        if (callback) callback(true);
+                    });
+                    
+                    // Handle escape key
+                    const handleEscape = (e) => {
+                        if (e.key === 'Escape') {
+                            document.body.removeChild(overlay);
+                            document.removeEventListener('keydown', handleEscape);
+                            if (callback) callback(false);
+                        }
+                    };
+                    document.addEventListener('keydown', handleEscape);
+                    
+                    // Handle clicking outside modal
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) {
+                            document.body.removeChild(overlay);
+                            document.removeEventListener('keydown', handleEscape);
+                            if (callback) callback(false);
+                        }
+                    });
+                }
+                
                 // Expandable sections functionality
                 document.addEventListener('DOMContentLoaded', function() {
                     const sectionHeaders = document.querySelectorAll('.nav-section-header');

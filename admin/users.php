@@ -306,10 +306,12 @@ function hideAddUserForm() {
 }
 
 function deleteUser(userId, username) {
-    if (confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
-        document.getElementById('deleteUserId').value = userId;
-        document.getElementById('deleteUserForm').submit();
-    }
+    showCustomConfirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`, function(confirmed) {
+        if (confirmed) {
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserForm').submit();
+        }
+    });
 }
 
 // Auto-hide alerts after 5 seconds

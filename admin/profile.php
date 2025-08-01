@@ -173,7 +173,7 @@ include_once 'includes/header.php';
             </div>
             <div class="card-content">
                 <div class="action-buttons">
-                    <a href="profile.php?logout=1" class="btn btn-danger" onclick="return confirm('Are you sure you want to logout?')">
+                    <a href="#" class="btn btn-danger" onclick="showCustomConfirm('Are you sure you want to logout?', function(confirmed) { if(confirmed) window.location.href='profile.php?logout=1'; }); return false;">
                         <i class="fas fa-sign-out-alt"></i>
                         Logout
                     </a>

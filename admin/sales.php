@@ -270,8 +270,8 @@ include_once 'includes/header.php';
                         <a href="generate_invoice.php?id=<?php echo $sale['id']; ?>" class="btn-action btn-view" target="_blank">
                             <i class="fas fa-file-pdf"></i> Invoice
                         </a>
-                        <a href="delete_sale.php?id=<?php echo $sale['id']; ?>" class="btn-action btn-delete delete-confirm" 
-                           onclick="return confirm('Are you sure you want to delete this sale? This action cannot be undone.')">
+                        <a href="#" class="btn-action btn-delete delete-confirm" 
+                           onclick="showCustomConfirm('Are you sure you want to delete this sale? This action cannot be undone.', function(confirmed) { if(confirmed) window.location.href='delete_sale.php?id=<?php echo $sale['id']; ?>'; }); return false;">
                             <i class="fas fa-trash"></i> Delete
                         </a>
                     </td>
