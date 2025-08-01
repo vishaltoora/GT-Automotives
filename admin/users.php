@@ -21,13 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         switch ($_POST['action']) {
             case 'add':
                 $username = trim($_POST['username']);
+                $first_name = trim($_POST['first_name']);
+                $last_name = trim($_POST['last_name']);
                 $email = trim($_POST['email']);
                 $password = $_POST['password'];
                 $is_admin = isset($_POST['is_admin']) ? 1 : 0;
                 
-                // Validate input
-                if (empty($username) || empty($email) || empty($password)) {
-                    $error = "All fields are required.";
+                // Validate input - username, first_name, last_name, and password are required
+                if (empty($username) || empty($first_name) || empty($last_name) || empty($password)) {
+                    $error = "Username, first name, last name, and password are required.";
                 } else {
                     // Check if username already exists
                     $check_query = "SELECT id FROM users WHERE username = ?";
@@ -40,14 +42,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         // Hash password and insert user
                         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                        $insert_query = "INSERT INTO users (username, password, email, is_admin) VALUES (?, ?, ?, ?)";
+                        $insert_query = "INSERT INTO users (username, first_name, last_name, password, email, is_admin) VALUES (?, ?, ?, ?, ?, ?)";
                         $insert_stmt = $conn->prepare($insert_query);
-                        $insert_stmt->bind_param("sssi", $username, $hashed_password, $email, $is_admin);
+                        $insert_stmt->bind_param("sssssi", $username, $first_name, $last_name, $hashed_password, $email, $is_admin);
                         
                         if ($insert_stmt->execute()) {
                             $success = "User created successfully!";
                         } else {
                             $error = "Error creating user: " . $conn->error;
+                        }
+                    }
+                }
+                break;
+                
+            case 'edit':
+                $user_id = (int)$_POST['user_id'];
+                $username = trim($_POST['username']);
+                $first_name = trim($_POST['first_name']);
+                $last_name = trim($_POST['last_name']);
+                $email = trim($_POST['email']);
+                $is_admin = isset($_POST['is_admin']) ? 1 : 0;
+                
+                // Validate input
+                if (empty($username) || empty($first_name) || empty($last_name)) {
+                    $error = "Username, first name, and last name are required.";
+                } else {
+                    // Check if username already exists for other users
+                    $check_query = "SELECT id FROM users WHERE username = ? AND id != ?";
+                    $check_stmt = $conn->prepare($check_query);
+                    $check_stmt->bind_param("si", $username, $user_id);
+                    $check_stmt->execute();
+                    
+                    if ($check_stmt->get_result()->num_rows > 0) {
+                        $error = "Username already exists.";
+                    } else {
+                        // Update user without password
+                        $update_query = "UPDATE users SET username = ?, first_name = ?, last_name = ?, email = ?, is_admin = ? WHERE id = ?";
+                        $update_stmt = $conn->prepare($update_query);
+                        $update_stmt->bind_param("ssssii", $username, $first_name, $last_name, $email, $is_admin, $user_id);
+                        
+                        if ($update_stmt->execute()) {
+                            $success = "User updated successfully!";
+                        } else {
+                            $error = "Error updating user: " . $conn->error;
                         }
                     }
                 }
@@ -76,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Get all users
-$users_query = "SELECT id, username, email, is_admin, created_at FROM users ORDER BY created_at DESC";
+$users_query = "SELECT id, username, first_name, last_name, email, is_admin, created_at FROM users ORDER BY created_at DESC";
 $users_result = $conn->query($users_query);
 
 // Include header
@@ -84,17 +121,6 @@ include_once 'includes/header.php';
 ?>
 
 <div class="admin-container">
-    <!-- Enhanced Header -->
-    <div class="admin-header">
-        <div class="header-content">
-            <h1><i class="fas fa-users"></i> User Management</h1>
-            <p class="header-subtitle">Manage system users and their permissions</p>
-        </div>
-        <button class="btn btn-primary add-user-btn" onclick="showAddUserForm()">
-            <i class="fas fa-plus"></i> Add New User
-        </button>
-    </div>
-
     <!-- Alerts -->
     <?php if (isset($error)): ?>
         <div class="alert alert-danger">
@@ -128,9 +154,23 @@ include_once 'includes/header.php';
                     </div>
                     
                     <div class="form-group">
-                        <label for="email">Email *</label>
-                        <input type="email" id="email" name="email" required 
-                               placeholder="Enter email address" maxlength="255">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" 
+                               placeholder="Enter email address (optional)" maxlength="255">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">First Name *</label>
+                        <input type="text" id="first_name" name="first_name" required 
+                               placeholder="Enter first name" maxlength="255">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="last_name">Last Name *</label>
+                        <input type="text" id="last_name" name="last_name" required 
+                               placeholder="Enter last name" maxlength="255">
                     </div>
                 </div>
                 
@@ -153,6 +193,67 @@ include_once 'includes/header.php';
                         <i class="fas fa-save"></i> Create User
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="hideAddUserForm()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserForm" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-edit"></i> Edit User</h2>
+                <button class="modal-close" onclick="hideEditUserForm()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="POST" class="admin-form">
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="user_id" id="editUserId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_username">Username *</label>
+                        <input type="text" id="edit_username" name="username" required 
+                               placeholder="Enter username" maxlength="255">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_email">Email</label>
+                        <input type="email" id="edit_email" name="email" 
+                               placeholder="Enter email address (optional)" maxlength="255">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_first_name">First Name *</label>
+                        <input type="text" id="edit_first_name" name="first_name" required 
+                               placeholder="Enter first name" maxlength="255">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_last_name">Last Name *</label>
+                        <input type="text" id="edit_last_name" name="last_name" required 
+                               placeholder="Enter last name" maxlength="255">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_admin" value="1">
+                        <span class="checkmark"></span>
+                        Grant admin privileges
+                    </label>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="hideEditUserForm()">
                         <i class="fas fa-times"></i> Cancel
                     </button>
                 </div>
@@ -219,7 +320,8 @@ include_once 'includes/header.php';
                     <table class="admin-table users-table">
                         <thead>
                             <tr>
-                                <th>User</th>
+                                <th>Name</th>
+                                <th>Username</th>
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Created</th>
@@ -240,7 +342,10 @@ include_once 'includes/header.php';
                                             </div>
                                             <div class="user-details">
                                                 <div class="user-name">
-                                                    <?php echo htmlspecialchars($user['username']); ?>
+                                                    <?php 
+                                                    $full_name = trim($user['first_name'] . ' ' . $user['last_name']);
+                                                    echo htmlspecialchars($full_name ?: 'No Name Set');
+                                                    ?>
                                                     <?php if ($user['id'] == $_SESSION['user_id']): ?>
                                                         <span class="badge badge-primary">You</span>
                                                     <?php endif; ?>
@@ -249,7 +354,14 @@ include_once 'includes/header.php';
                                             </div>
                                         </div>
                                     </td>
-                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['username']); ?></td>
+                                    <td>
+                                        <?php if (!empty($user['email'])): ?>
+                                            <?php echo htmlspecialchars($user['email']); ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">No email</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <span class="badge <?php echo $user['is_admin'] ? 'badge-admin' : 'badge-user'; ?>">
                                             <?php echo $user['is_admin'] ? 'Admin' : 'User'; ?>
@@ -258,6 +370,11 @@ include_once 'includes/header.php';
                                     <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
                                     <td>
                                         <?php if ($user['id'] != $_SESSION['user_id']): ?>
+                                            <button class="btn-action btn-edit" 
+                                                    onclick="editUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>', '<?php echo htmlspecialchars($user['first_name']); ?>', '<?php echo htmlspecialchars($user['last_name']); ?>', '<?php echo htmlspecialchars($user['email']); ?>', <?php echo $user['is_admin']; ?>)"
+                                                    title="Edit User">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
                                             <button class="btn-action btn-delete" 
                                                     onclick="deleteUser(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')"
                                                     title="Delete User">
@@ -305,6 +422,26 @@ function hideAddUserForm() {
     document.getElementById('addUserForm').querySelector('form').reset();
 }
 
+function showEditUserForm(id, username, firstName, lastName, email, isAdmin) {
+    document.getElementById('editUserId').value = id;
+    document.getElementById('edit_username').value = username;
+    document.getElementById('edit_first_name').value = firstName;
+    document.getElementById('edit_last_name').value = lastName;
+    document.getElementById('edit_email').value = email;
+    document.querySelector('#editUserForm input[name="is_admin"]').checked = isAdmin === 1;
+    document.getElementById('editUserForm').style.display = 'flex';
+    document.getElementById('edit_username').focus();
+}
+
+function hideEditUserForm() {
+    document.getElementById('editUserForm').style.display = 'none';
+    document.getElementById('editUserForm').querySelector('form').reset();
+}
+
+function editUser(id, username, firstName, lastName, email, isAdmin) {
+    showEditUserForm(id, username, firstName, lastName, email, isAdmin);
+}
+
 function deleteUser(userId, username) {
     showCustomConfirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`, function(confirmed) {
         if (confirmed) {
@@ -329,60 +466,14 @@ document.addEventListener('click', function(event) {
     if (event.target === modal) {
         hideAddUserForm();
     }
+    const editModal = document.getElementById('editUserForm');
+    if (event.target === editModal) {
+        hideEditUserForm();
+    }
 });
 </script>
 
 <style>
-/* Enhanced Header Styles */
-.admin-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding: 2rem;
-    background: #243c55;
-    border-radius: 15px;
-    color: white;
-    box-shadow: 0 8px 25px rgba(36, 60, 85, 0.2);
-}
-
-.header-content h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: 2.2rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.header-content h1 i {
-    font-size: 1.8rem;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.header-subtitle {
-    margin: 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
-    font-weight: 400;
-}
-
-.add-user-btn {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.add-user-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
-
 /* Stats Cards */
 .stats-cards {
     display: grid;
@@ -436,12 +527,17 @@ document.addEventListener('click', function(event) {
     font-weight: 500;
 }
 
-/* Users Table */
+/* Users Table - Full Width */
+.users-dashboard {
+    width: 100%;
+}
+
 .users-table-container {
     background: white;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    width: 100%;
 }
 
 .table-header {
@@ -564,6 +660,16 @@ document.addEventListener('click', function(event) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.btn-edit {
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.btn-edit:hover {
+    background: #bbdefb;
+    transform: scale(1.05);
 }
 
 .btn-delete {
@@ -746,16 +852,6 @@ document.addEventListener('click', function(event) {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .admin-header {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-    }
-    
-    .header-content h1 {
-        font-size: 1.8rem;
-    }
-    
     .stats-cards {
         grid-template-columns: 1fr;
     }
@@ -796,14 +892,6 @@ document.addEventListener('click', function(event) {
 }
 
 @media (max-width: 480px) {
-    .admin-header {
-        padding: 1.5rem;
-    }
-    
-    .header-content h1 {
-        font-size: 1.5rem;
-    }
-    
     .stat-card {
         padding: 1rem;
     }

@@ -121,7 +121,6 @@ images/
 
 ## Future Enhancements
 
-- Photo compression/optimization
 - Bulk photo upload
 - Photo editing capabilities
 - Advanced filtering options

@@ -324,39 +324,39 @@ th {
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background-color: #243c55;
     color: white;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: #1a2d3f;
 }
 
 .btn-secondary {
-    background-color: #6c757d;
+    background-color: #4a5c6b;
     color: white;
 }
 
 .btn-secondary:hover {
-    background-color: #545b62;
+    background-color: #3d4c59;
 }
 
 .btn-success {
-    background-color: #28a745;
+    background-color: #243c55;
     color: white;
 }
 
 .btn-success:hover {
-    background-color: #1e7e34;
+    background-color: #1a2d3f;
 }
 
 .btn-warning {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: #8b2635;
+    color: white;
 }
 
 .btn-warning:hover {
-    background-color: #e0a800;
+    background-color: #7a1f2d;
 }
 
 .alert {

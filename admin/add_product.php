@@ -261,8 +261,6 @@ if (file_exists('includes/header.php')) {
 
 <style>
 .admin-content {
-    max-width: 800px;
-    margin: 0 auto;
     padding: 20px;
 }
 
@@ -271,6 +269,7 @@ if (file_exists('includes/header.php')) {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
+    width: 100%;
 }
 
 .admin-form {
@@ -278,6 +277,8 @@ if (file_exists('includes/header.php')) {
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .form-row {

@@ -48,7 +48,10 @@ if (!empty($where_conditions)) {
 }
 
 // Get all sales with customer info and filters
-$sales_query = "SELECT s.*, u.username as created_by_name FROM sales s 
+$sales_query = "SELECT s.*, 
+                CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as created_by_name,
+                u.username as created_by_username
+                FROM sales s 
                 LEFT JOIN users u ON s.created_by = u.id 
                 $where_clause
                 ORDER BY s.created_at DESC";
@@ -435,6 +438,9 @@ include_once 'includes/header.php';
 .filter-actions .btn {
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
+    min-width: 100px;
+    justify-content: center;
+    flex: 1;
 }
 
 .filter-results {

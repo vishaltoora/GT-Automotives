@@ -486,12 +486,12 @@ if (file_exists('includes/header.php')) {
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background-color: #243c55;
     color: white;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: #1a2c3f;
 }
 
 .btn-secondary {
@@ -504,12 +504,12 @@ if (file_exists('includes/header.php')) {
 }
 
 .btn-success {
-    background-color: #28a745;
+    background-color: #243c55;
     color: white;
 }
 
 .btn-success:hover {
-    background-color: #1e7e34;
+    background-color: #1a2c3f;
 }
 
 .btn-warning {

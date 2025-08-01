@@ -21,10 +21,12 @@ if ($category_id <= 0) {
 }
 
 // Check if category exists
-    $stmt = $conn->prepare("SELECT * FROM service_categories WHERE id = ?");
-    $stmt->bind_param("i", $category_id);
-    $category_result = $stmt->get_result();
-    $category = $category_result->fetch_assoc();
+$stmt = $conn->prepare("SELECT * FROM service_categories WHERE id = ?");
+$stmt->bind_param("i", $category_id);
+$stmt->execute();
+$category_result = $stmt->get_result();
+$category = $category_result->fetch_assoc();
+$stmt->close();
 
 if (!$category) {
     $_SESSION['error_message'] = 'Category not found';
@@ -33,10 +35,12 @@ if (!$category) {
 }
 
 // Check if category has any services
-    $services_stmt = $conn->prepare("SELECT COUNT(*) as count FROM services WHERE category_id = ?");
-    $services_stmt->bind_param("i", $category['name']);
-    $services_result = $services_stmt->get_result();
-    $services_count = $services_result->fetch_assoc()['count'];
+$services_stmt = $conn->prepare("SELECT COUNT(*) as count FROM services WHERE category_id = ?");
+$services_stmt->bind_param("i", $category_id);
+$services_stmt->execute();
+$services_result = $services_stmt->get_result();
+$services_count = $services_result->fetch_assoc()['count'];
+$services_stmt->close();
 
 if ($services_count > 0) {
     $_SESSION['error_message'] = 'Cannot delete category that has services. Please move or delete all services in this category first.';
@@ -45,15 +49,16 @@ if ($services_count > 0) {
 }
 
 // Delete the category
-    $stmt = $conn->prepare("DELETE FROM service_categories WHERE id = ?");
-    $stmt->bind_param("i", $category_id);
+$stmt = $conn->prepare("DELETE FROM service_categories WHERE id = ?");
+$stmt->bind_param("i", $category_id);
 
 if ($stmt->execute()) {
     $_SESSION['success_message'] = 'Category "' . htmlspecialchars($category['name']) . '" deleted successfully';
 } else {
-    $_SESSION['error_message'] = 'Error deleting category: ' . $conn->error();
+    $_SESSION['error_message'] = 'Error deleting category: ' . $conn->error;
 }
 
+$stmt->close();
 header('Location: service_categories.php');
 exit;
 ?> 

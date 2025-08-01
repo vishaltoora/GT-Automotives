@@ -186,16 +186,18 @@ INSERT INTO tires (brand_id, name, size, price, description, image_url, stock_qu
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
+    first_name VARCHAR(255) NULL,
+    last_name VARCHAR(255) NULL,
     password VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NULL,
     is_admin TINYINT(1) DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert default admin user (password: admin123)
-INSERT INTO users (username, password, email, is_admin) 
-VALUES ('admin', '$2y$10$Nq/VTTeC7NqIrdWUwJJvR.mRXMy8YH3wF5WKIUG63yzsCEP3Cq34q', 'admin@gtautomotives.com', 1);
+INSERT INTO users (username, first_name, last_name, password, email, is_admin) 
+VALUES ('admin', 'Admin', 'User', '$2y$10$Nq/VTTeC7NqIrdWUwJJvR.mRXMy8YH3wF5WKIUG63yzsCEP3Cq34q', 'admin@gtautomotives.com', 1);
 
 -- Create inquiries table
 CREATE TABLE IF NOT EXISTS inquiries (

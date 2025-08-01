@@ -387,21 +387,21 @@ ob_flush();
         }
         
         .btn-primary {
-            background: #007bff;
+            background: #243c55;
             color: white;
         }
         
         .btn-primary:hover {
-            background: #0056b3;
+            background: #1a2d3f;
         }
         
         .btn-secondary {
-            background: #6c757d;
+            background: #4a5c6b;
             color: white;
         }
         
         .btn-secondary:hover {
-            background: #545b62;
+            background: #3d4c59;
         }
         
         /* Stock info styles */

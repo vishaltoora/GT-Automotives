@@ -5,8 +5,7 @@ echo "<h1>Fixing File Permissions</h1>";
 // Create necessary directories if they don't exist
 $directories = [
     'database',
-    'uploads',
-    'uploads/compressed'
+    'uploads'
 ];
 
 foreach ($directories as $dir) {

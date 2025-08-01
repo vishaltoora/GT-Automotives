@@ -41,17 +41,15 @@ sudo chmod 755 database/
 
 ```bash
 # Create uploads directory with proper permissions
-sudo mkdir -p uploads/compressed
+sudo mkdir -p uploads
 sudo chown www-data:www-data uploads/
 sudo chmod 755 uploads/
-sudo chmod 755 uploads/compressed/
 ```
 
 ### 3. Missing PHP Extensions
 
 **Symptoms:**
 
-- Image compression not working
 - "Class not found" errors
 - GD library errors
 
@@ -72,8 +70,8 @@ sudo systemctl restart nginx
 
 **Symptoms:**
 
-- "Class 'GTAutomotives\Utils\ImageCompressor' not found"
-- Image compression features not working
+- "Class not found" errors
+- Autoloader issues
 
 **Solutions:**
 
@@ -239,12 +237,10 @@ sudo chown -R www-data:www-data /var/www/html/
 sudo chmod -R 755 /var/www/html/
 
 # Create uploads directory
-sudo mkdir -p /var/www/html/uploads/compressed
+sudo mkdir -p /var/www/html/uploads
 sudo chown -R www-data:www-data /var/www/html/uploads/
 sudo chmod -R 755 /var/www/html/uploads/
 
 # Restart web server
 sudo systemctl restart apache2
 ```
-
-Save this as `fix_deployment.sh` and run it on your server.

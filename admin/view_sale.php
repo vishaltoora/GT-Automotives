@@ -20,7 +20,10 @@ if (!$sale_id) {
 }
 
 // Get sale details with creator info
-$sale_query = "SELECT s.*, u.username as created_by_name FROM sales s 
+$sale_query = "SELECT s.*, 
+               CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as created_by_name,
+               u.username as created_by_username
+               FROM sales s 
                LEFT JOIN users u ON s.created_by = u.id 
                WHERE s.id = ?";
 $sale_stmt = $conn->prepare($sale_query);

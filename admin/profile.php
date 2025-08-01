@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     
     // Validate current password
     $validate_stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
-    $validate_stmt->bind_param("s", $_SESSION['admin_username']);
+    $validate_stmt->bind_param("s", $_SESSION['username']);
     $validate_result = $validate_stmt->get_result();
     $user = $validate_result->fetch_assoc();
     $validate_stmt->close();
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
         // Update password
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
         $update_stmt = $conn->prepare("UPDATE users SET password = ? WHERE username = ?");
-        $update_stmt->bind_param("ss", $hashed_password, $_SESSION['admin_username']);
+        $update_stmt->bind_param("ss", $hashed_password, $_SESSION['username']);
         
         if ($update_stmt->execute()) {
             $_SESSION['success_message'] = 'Password updated successfully!';
@@ -61,11 +61,18 @@ if (isset($_GET['logout'])) {
 
 // Get user information
 $user_stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
-$user_stmt->bind_param("s", $_SESSION['admin_username']);
+$user_stmt->bind_param("s", $_SESSION['username']);
 $user_stmt->execute();
 $user_result = $user_stmt->get_result();
 $user_info = $user_result->fetch_assoc();
 $user_stmt->close();
+
+// Check if user info exists
+if (!$user_info) {
+    $_SESSION['error_message'] = 'User information not found. Please log in again.';
+    header('Location: login.php');
+    exit();
+}
 
 // Include header
 include_once 'includes/header.php';
@@ -78,8 +85,12 @@ include_once 'includes/header.php';
             <i class="fas fa-user-circle"></i>
         </div>
         <div class="profile-info">
-            <h1><?php echo htmlspecialchars($user_info['username']); ?></h1>
-            <p>Administrator</p>
+            <?php 
+            $full_name = trim($user_info['first_name'] . ' ' . $user_info['last_name']);
+            $display_name = $full_name ?: $user_info['username'];
+            ?>
+            <h1><?php echo htmlspecialchars($display_name); ?></h1>
+            <p><?php echo $user_info['is_admin'] ? 'Administrator' : 'User'; ?></p>
         </div>
     </div>
 
@@ -93,19 +104,40 @@ include_once 'includes/header.php';
                 <h2>Account Information</h2>
             </div>
             <div class="card-content">
+                <?php if (!empty($user_info['first_name']) || !empty($user_info['last_name'])): ?>
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="fas fa-user"></i>
+                        <span>Full Name</span>
+                    </div>
+                    <div class="info-value"><?php echo htmlspecialchars($full_name); ?></div>
+                </div>
+                <?php endif; ?>
+                
                 <div class="info-item">
                     <div class="info-label">
                         <i class="fas fa-user-tag"></i>
                         <span>Username</span>
                     </div>
-                    <div class="info-value"><?php echo htmlspecialchars($user_info['username']); ?></div>
+                    <div class="info-value"><?php echo htmlspecialchars($user_info['username'] ?? ''); ?></div>
                 </div>
+                
+                <?php if (!empty($user_info['email'])): ?>
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="fas fa-envelope"></i>
+                        <span>Email</span>
+                    </div>
+                    <div class="info-value"><?php echo htmlspecialchars($user_info['email']); ?></div>
+                </div>
+                <?php endif; ?>
+                
                 <div class="info-item">
                     <div class="info-label">
                         <i class="fas fa-calendar-plus"></i>
                         <span>Account Created</span>
                     </div>
-                    <div class="info-value"><?php echo date('F j, Y', strtotime($user_info['created_at'])); ?></div>
+                    <div class="info-value"><?php echo isset($user_info['created_at']) ? date('F j, Y', strtotime($user_info['created_at'])) : 'Not available'; ?></div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">

@@ -103,6 +103,24 @@ while ($row = $monthly_revenue_result->fetch_assoc()) {
     $monthly_revenue[] = $row;
 }
 
+// Get current user information for display
+$current_user_query = "SELECT first_name, last_name, username FROM users WHERE username = ?";
+$current_user_stmt = $conn->prepare($current_user_query);
+$current_user_stmt->bind_param("s", $_SESSION['username']);
+$current_user_stmt->execute();
+$current_user_result = $current_user_stmt->get_result();
+$current_user = $current_user_result->fetch_assoc();
+$current_user_stmt->close();
+
+// Determine display name
+$display_name = '';
+if ($current_user) {
+    $full_name = trim($current_user['first_name'] . ' ' . $current_user['last_name']);
+    $display_name = $full_name ?: $current_user['username'];
+} else {
+    $display_name = $_SESSION['username'] ?? 'Admin';
+}
+
 // Include header
 include_once 'includes/header.php';
 ?>
@@ -111,7 +129,7 @@ include_once 'includes/header.php';
 <div class="dashboard-header">
     <div class="dashboard-welcome">
         <div class="welcome-content">
-            <h1>Welcome back, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?>!</h1>
+            <h1>Welcome back, <?php echo htmlspecialchars($display_name); ?>!</h1>
             <p>Here's what's happening with your business today.</p>
         </div>
         <div class="calendar-date">

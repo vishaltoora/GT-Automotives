@@ -25,7 +25,7 @@ if ($service_id <= 0) {
 
 // Fetch service categories for dropdown
 $categories = [];
-$result = $conn->query('SELECT name, description FROM service_categories ORDER BY sort_order, name');
+$result = $conn->query('SELECT name, description FROM service_categories ORDER BY name');
 while ($row = $result->fetch_assoc()) {
     $categories[] = $row;
 }
@@ -168,6 +168,18 @@ include_once 'includes/header.php';
 .checkbox-label input[type="checkbox"] {
     margin: 0;
     width: auto;
+}
+
+.form-submit {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.form-submit .btn {
+    min-width: 140px;
+    text-align: center;
 }
 
 /* Enhanced Select2 Styles */

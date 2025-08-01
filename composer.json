@@ -3,8 +3,7 @@
   "description": "GT Automotives - Premium Tire Shop Web Application",
   "type": "project",
   "require": {
-    "php": ">=7.4",
-    "intervention/image": "^2.7"
+    "php": ">=7.4"
   },
   "autoload": {
     "psr-4": {

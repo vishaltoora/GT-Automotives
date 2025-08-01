@@ -83,17 +83,10 @@ function testDatabaseConnection() {
 // Function to create uploads directory if needed
 function ensureUploadsDirectory() {
     $uploads_dir = __DIR__ . '/../uploads';
-    $compressed_dir = $uploads_dir . '/compressed';
     
     if (!is_dir($uploads_dir)) {
         if (!mkdir($uploads_dir, 0755, true)) {
             throw new Exception("Failed to create uploads directory");
-        }
-    }
-    
-    if (!is_dir($compressed_dir)) {
-        if (!mkdir($compressed_dir, 0755, true)) {
-            throw new Exception("Failed to create compressed directory");
         }
     }
     

@@ -17,7 +17,7 @@ $page_title = 'Manage Service Categories';
 // Get categories
 $categories_query = "SELECT sc.*, COUNT(s.id) as service_count FROM service_categories sc 
                     LEFT JOIN services s ON sc.name = s.category 
-                    GROUP BY sc.id ORDER BY sc.sort_order, sc.name";
+                    GROUP BY sc.id ORDER BY sc.name";
 $categories_result = $conn->query($categories_query);
 
 // Include header
@@ -44,7 +44,6 @@ include_once 'includes/header.php';
                 <th>Category Name</th>
                 <th>Description</th>
                 <th>Icon</th>
-                <th>Sort Order</th>
                 <th>Services Count</th>
                 <th>Actions</th>
             </tr>
@@ -63,7 +62,6 @@ include_once 'includes/header.php';
                         <i class="<?php echo htmlspecialchars($category['icon']); ?>"></i>
                         <small><?php echo htmlspecialchars($category['icon']); ?></small>
                     </td>
-                    <td><?php echo $category['sort_order']; ?></td>
                     <td>
                         <span class="count-badge">
                             <?php echo $category['service_count']; ?> services
