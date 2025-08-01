@@ -4,31 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Include error handler for debugging
-require_once '../includes/error_handler.php';
-
-// Test database connection
-try {
-    $conn = testDatabaseConnection();
-} catch (Exception $e) {
-    // Handle error silently or log it
-    error_log("Error in admin/index.php: " . $e->getMessage());
-    // Continue with limited functionality
-}
-
-// Check required extensions
-$missing_extensions = checkRequiredExtensions();
-if (!empty($missing_extensions)) {
-    error_log("Missing PHP Extensions: " . implode(', ', $missing_extensions));
-}
-
-// Ensure uploads directory exists
-try {
-    ensureUploadsDirectory();
-} catch (Exception $e) {
-    error_log("Uploads Directory Error: " . $e->getMessage());
-}
-
 // Include database connection
 require_once '../includes/db_connect.php';
 require_once '../includes/auth.php';
@@ -42,75 +17,91 @@ $page_title = 'Admin Dashboard';
 // Get comprehensive statistics
 $stats = [];
 
-// Product statistics
-$product_count_query = "SELECT COUNT(*) as count FROM tires";
-$product_count_result = $conn->query($product_count_query);
-$stats['total_products'] = $product_count_result->fetch_assoc()['count'];
+try {
+    // Product statistics
+    $product_count_query = "SELECT COUNT(*) as count FROM tires";
+    $product_count_result = $conn->query($product_count_query);
+    $stats['total_products'] = $product_count_result ? $product_count_result->fetch_assoc()['count'] : 0;
 
-// Inventory value
-$inventory_value_query = "SELECT SUM(price * stock_quantity) as total_value FROM tires WHERE stock_quantity > 0";
-$inventory_value_result = $conn->query($inventory_value_query);
-$stats['inventory_value'] = $inventory_value_result->fetch_assoc()['total_value'] ?? 0;
+    // Inventory value
+    $inventory_value_query = "SELECT SUM(price * stock_quantity) as total_value FROM tires WHERE stock_quantity > 0";
+    $inventory_value_result = $conn->query($inventory_value_query);
+    $stats['inventory_value'] = $inventory_value_result ? ($inventory_value_result->fetch_assoc()['total_value'] ?? 0) : 0;
 
-// Sales statistics
-$total_sales_query = "SELECT COUNT(*) as count FROM sales";
-$total_sales_result = $conn->query($total_sales_query);
-$stats['total_sales'] = $total_sales_result->fetch_assoc()['count'];
+    // Sales statistics
+    $total_sales_query = "SELECT COUNT(*) as count FROM sales";
+    $total_sales_result = $conn->query($total_sales_query);
+    $stats['total_sales'] = $total_sales_result ? $total_sales_result->fetch_assoc()['count'] : 0;
 
-// Revenue statistics
-$total_revenue_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'paid'";
-$total_revenue_result = $conn->query($total_revenue_query);
-$stats['total_revenue'] = $total_revenue_result->fetch_assoc()['total'] ?? 0;
+    // Revenue statistics
+    $total_revenue_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'paid'";
+    $total_revenue_result = $conn->query($total_revenue_query);
+    $stats['total_revenue'] = $total_revenue_result ? ($total_revenue_result->fetch_assoc()['total'] ?? 0) : 0;
 
-// Pending payments
-$pending_payments_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'pending'";
-$pending_payments_result = $conn->query($pending_payments_query);
-$stats['pending_payments'] = $pending_payments_result->fetch_assoc()['total'] ?? 0;
+    // Pending payments
+    $pending_payments_query = "SELECT SUM(total_amount) as total FROM sales WHERE payment_status = 'pending'";
+    $pending_payments_result = $conn->query($pending_payments_query);
+    $stats['pending_payments'] = $pending_payments_result ? ($pending_payments_result->fetch_assoc()['total'] ?? 0) : 0;
 
-// Low stock products (less than 10 items)
-$low_stock_query = "SELECT COUNT(*) as count FROM tires WHERE stock_quantity > 0 AND stock_quantity <= 5";
-$low_stock_result = $conn->query($low_stock_query);
-$stats['low_stock_products'] = $low_stock_result->fetch_assoc()['count'];
+    // Low stock products (less than 10 items)
+    $low_stock_query = "SELECT COUNT(*) as count FROM tires WHERE stock_quantity > 0 AND stock_quantity <= 5";
+    $low_stock_result = $conn->query($low_stock_query);
+    $stats['low_stock_products'] = $low_stock_result ? $low_stock_result->fetch_assoc()['count'] : 0;
 
-// Recent products (with brand name)
-$recent_products_query = "SELECT t.*, b.name as brand_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id ORDER BY t.id DESC LIMIT 5";
-$recent_products_result = $conn->query($recent_products_query);
+    // Recent products (with brand name)
+    $recent_products_query = "SELECT t.*, b.name as brand_name FROM tires t LEFT JOIN brands b ON t.brand_id = b.id ORDER BY t.id DESC LIMIT 5";
+    $recent_products_result = $conn->query($recent_products_query);
 
-// Count rows for recent products
-$recent_products_rows = [];
-while ($row = $recent_products_result->fetch_assoc()) {
-    $recent_products_rows[] = $row;
+    // Count rows for recent products
+    $recent_products_rows = [];
+    if ($recent_products_result) {
+        while ($row = $recent_products_result->fetch_assoc()) {
+            $recent_products_rows[] = $row;
+        }
+    }
+
+    // Recent sales
+    $recent_sales_query = "SELECT s.*, u.username as created_by_name FROM sales s 
+                           LEFT JOIN users u ON s.created_by = u.id 
+                           ORDER BY s.created_at DESC LIMIT 5";
+    $recent_sales_result = $conn->query($recent_sales_query);
+
+    // Count rows for recent sales
+    $recent_sales_rows = [];
+    if ($recent_sales_result) {
+        while ($row = $recent_sales_result->fetch_assoc()) {
+            $recent_sales_rows[] = $row;
+        }
+    }
+
+    // Get current user information for display
+    $current_user_query = "SELECT first_name, last_name, username FROM users WHERE username = ?";
+    $current_user_stmt = $conn->prepare($current_user_query);
+    if ($current_user_stmt) {
+        $current_user_stmt->bind_param("s", $_SESSION['username']);
+        $current_user_stmt->execute();
+        $current_user_result = $current_user_stmt->get_result();
+        $current_user = $current_user_result->fetch_assoc();
+        $current_user_stmt->close();
+    } else {
+        $current_user = null;
+    }
+
+} catch (Exception $e) {
+    // Handle database errors gracefully
+    error_log("Database error in admin/index.php: " . $e->getMessage());
+    $stats = [
+        'total_products' => 0,
+        'inventory_value' => 0,
+        'total_sales' => 0,
+        'total_revenue' => 0,
+        'pending_payments' => 0,
+        'low_stock_products' => 0
+    ];
+    $recent_products_rows = [];
+    $recent_sales_rows = [];
+    $current_user = null;
 }
-
-// Recent sales
-$recent_sales_query = "SELECT s.*, u.username as created_by_name FROM sales s 
-                       LEFT JOIN users u ON s.created_by = u.id 
-                       ORDER BY s.created_at DESC LIMIT 5";
-$recent_sales_result = $conn->query($recent_sales_query);
-
-// Count rows for recent sales
-$recent_sales_rows = [];
-while ($row = $recent_sales_result->fetch_assoc()) {
-    $recent_sales_rows[] = $row;
-}
-
-// Monthly revenue for chart (last 6 months)
-$monthly_revenue_query = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(total_amount) as revenue FROM sales WHERE payment_status = 'paid' GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month DESC LIMIT 12";
-$monthly_revenue_result = $conn->query($monthly_revenue_query);
-
-$monthly_revenue = [];
-while ($row = $monthly_revenue_result->fetch_assoc()) {
-    $monthly_revenue[] = $row;
-}
-
-// Get current user information for display
-$current_user_query = "SELECT first_name, last_name, username FROM users WHERE username = ?";
-$current_user_stmt = $conn->prepare($current_user_query);
-$current_user_stmt->bind_param("s", $_SESSION['username']);
-$current_user_stmt->execute();
-$current_user_result = $current_user_stmt->get_result();
-$current_user = $current_user_result->fetch_assoc();
-$current_user_stmt->close();
 
 // Determine display name
 $display_name = '';
@@ -178,7 +169,6 @@ include_once 'includes/header.php';
             <div class="stat-label">Products</div>
             <div class="stat-change neutral">No change</div>
         </div>
-       
     </div>
     
     <div class="stat-card stat-card-info">
@@ -208,17 +198,17 @@ include_once 'includes/header.php';
                         <div class="recent-item">
                             <div class="recent-item-main">
                                 <div class="recent-item-title">
-                                    <strong><?php echo htmlspecialchars($sale['customer_name']); ?></strong>
-                                    <span class="status-badge status-<?php echo $sale['payment_status']; ?>">
-                                        <?php echo ucfirst($sale['payment_status']); ?>
+                                    <strong><?php echo htmlspecialchars($sale['customer_name'] ?? 'Unknown Customer'); ?></strong>
+                                    <span class="status-badge status-<?php echo $sale['payment_status'] ?? 'pending'; ?>">
+                                        <?php echo ucfirst($sale['payment_status'] ?? 'pending'); ?>
                                     </span>
                                 </div>
                                 <div class="recent-item-subtitle">
-                                    Invoice #<?php echo htmlspecialchars($sale['invoice_number']); ?>
+                                    Invoice #<?php echo htmlspecialchars($sale['invoice_number'] ?? 'N/A'); ?>
                                 </div>
                             </div>
                             <div class="recent-item-amount">
-                                $<?php echo number_format($sale['total_amount'], 2); ?>
+                                $<?php echo number_format($sale['total_amount'] ?? 0, 2); ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -250,17 +240,17 @@ include_once 'includes/header.php';
                         <div class="recent-item">
                             <div class="recent-item-main">
                                 <div class="recent-item-title">
-                                    <strong><?php echo htmlspecialchars($product['name']); ?></strong>
-                                    <span class="stock-badge <?php echo $product['stock_quantity'] < 10 ? 'low-stock' : 'in-stock'; ?>">
-                                        <?php echo $product['stock_quantity']; ?> in stock
+                                    <strong><?php echo htmlspecialchars($product['name'] ?? 'Unknown Product'); ?></strong>
+                                    <span class="stock-badge <?php echo ($product['stock_quantity'] ?? 0) < 10 ? 'low-stock' : 'in-stock'; ?>">
+                                        <?php echo $product['stock_quantity'] ?? 0; ?> in stock
                                     </span>
                                 </div>
                                 <div class="recent-item-subtitle">
-                                    <?php echo htmlspecialchars($product['brand_name']); ?> • <?php echo htmlspecialchars($product['size']); ?>
+                                    <?php echo htmlspecialchars($product['brand_name'] ?? 'Unknown Brand'); ?> • <?php echo htmlspecialchars($product['size'] ?? 'Unknown Size'); ?>
                                 </div>
                             </div>
                             <div class="recent-item-amount">
-                                $<?php echo number_format($product['price'], 2); ?>
+                                $<?php echo number_format($product['price'] ?? 0, 2); ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -414,34 +404,6 @@ include_once 'includes/header.php';
 .year {
     font-size: 0.9rem;
     color: #718096;
-}
-
-/* Stat card action button */
-.stat-action {
-    margin-left: auto;
-}
-
-.stat-action .btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    border-radius: 6px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-/* Card actions */
-.card-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.card-actions .btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    border-radius: 6px;
-    text-decoration: none;
-    transition: all 0.3s ease;
 }
 
 /* Statistics Grid */
