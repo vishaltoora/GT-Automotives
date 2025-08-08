@@ -39,7 +39,7 @@ try {
             }
             
             if (empty($errors) && isset($conn)) {
-                $insert_query = "INSERT INTO sizes (name, description) VALUES (?, ?)";
+                $insert_query = "INSERT INTO sizes (name, description, is_active, sort_order) VALUES (?, ?, 1, 0)";
                 $stmt = $conn->prepare($insert_query);
                 
                 if ($stmt) {

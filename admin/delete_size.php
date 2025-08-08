@@ -51,7 +51,7 @@ $delete_stmt->bind_param("i", $size_id);
 if ($delete_stmt->execute()) {
     $_SESSION['success_message'] = "Size '{$size['name']}' deleted successfully";
 } else {
-    $_SESSION['error_message'] = 'Database error: ' . $conn->error();
+    $_SESSION['error_message'] = 'Database error: ' . $conn->error;
 }
 
 header('Location: sizes.php');

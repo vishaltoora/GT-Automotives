@@ -43,7 +43,7 @@ $delete_stmt->bind_param("i", $product_id);
 if ($delete_stmt->execute()) {
     $_SESSION['success_message'] = 'Product deleted successfully';
 } else {
-    $_SESSION['error_message'] = 'Error deleting product: ' . $conn->error();
+    $_SESSION['error_message'] = 'Error deleting product: ' . $conn->error;
 }
 
 $delete_stmt->close();
