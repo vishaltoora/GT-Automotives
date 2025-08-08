@@ -329,15 +329,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include_once 'includes/header.php';
 ?>
 
-<div class="admin-header">
-    <h1>Create New Sale</h1>
-    <div class="admin-actions">
-        <a href="sales.php" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Sales
-        </a>
-    </div>
-</div>
-
 <?php if (isset($error_message)): ?>
     <div class="alert alert-danger">
         <i class="fas fa-exclamation-triangle"></i>

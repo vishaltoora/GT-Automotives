@@ -613,9 +613,11 @@ if ($current_file !== 'login.php') {
                 <h1><?php echo isset($page_title) ? htmlspecialchars($page_title) : 'Dashboard'; ?></h1>
                 
                 <div class="admin-user">
-                    <a href="create_sale.php" class="btn btn-success" style="margin-right: 1rem;">
-                        <i class="fas fa-plus-circle"></i> Create New Sale
-                    </a>
+                    <?php if ($current_file !== 'create_sale.php'): ?>
+                        <a href="create_sale.php" class="btn btn-success" style="margin-right: 1rem;">
+                            <i class="fas fa-plus-circle"></i> Create New Sale
+                        </a>
+                    <?php endif; ?>
 
                     <a href="profile.php" class="btn btn-primary">Profile</a>
                 </div>

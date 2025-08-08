@@ -28,6 +28,13 @@ try {
     $errors = [];
     $success_message = '';
 
+    // Pagination settings
+    $items_per_page = 20; // Show 20 items per page
+    $current_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $total_items = 0;
+    $total_pages = 0;
+
     // Process form submission for adding new size
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($_POST['action'] === 'add') {
@@ -85,15 +92,55 @@ try {
         }
     }
 
-    // Fetch all sizes
+    // Fetch sizes with pagination and search
     if (isset($conn)) {
-        $sizes_query = "SELECT * FROM sizes ORDER BY name ASC";
-        $sizes_result = $conn->query($sizes_query);
+        // Build the WHERE clause for search
+        $where_clause = "";
+        $search_params = [];
         
-        if ($sizes_result) {
+        if (!empty($search)) {
+            $where_clause = "WHERE name LIKE ? OR description LIKE ?";
+            $search_term = "%$search%";
+            $search_params = [$search_term, $search_term];
+        }
+
+        // Get total count for pagination
+        $count_query = "SELECT COUNT(*) as total FROM sizes $where_clause";
+        $count_stmt = $conn->prepare($count_query);
+        
+        if ($count_stmt) {
+            if (!empty($search_params)) {
+                $count_stmt->bind_param("ss", $search_params[0], $search_params[1]);
+            }
+            $count_stmt->execute();
+            $count_result = $count_stmt->get_result();
+            $total_items = $count_result->fetch_assoc()['total'];
+            $count_stmt->close();
+        }
+
+        // Calculate pagination
+        $total_pages = ceil($total_items / $items_per_page);
+        $offset = ($current_page - 1) * $items_per_page;
+
+        // Fetch sizes with pagination
+        $sizes_query = "SELECT * FROM sizes $where_clause ORDER BY name ASC LIMIT ? OFFSET ?";
+        $sizes_stmt = $conn->prepare($sizes_query);
+        
+        if ($sizes_stmt) {
+            if (!empty($search_params)) {
+                $sizes_stmt->bind_param("ssii", $search_params[0], $search_params[1], $items_per_page, $offset);
+            } else {
+                $sizes_stmt->bind_param("ii", $items_per_page, $offset);
+            }
+            
+            $sizes_stmt->execute();
+            $sizes_result = $sizes_stmt->get_result();
+            
             while ($row = $sizes_result->fetch_assoc()) {
                 $sizes[] = $row;
             }
+            
+            $sizes_stmt->close();
         }
     }
 
@@ -151,44 +198,113 @@ if (file_exists('includes/header.php')) {
 
     <!-- Sizes List -->
     <div class="admin-table">
-        <h3>All Sizes (<?php echo count($sizes); ?> total)</h3>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Size</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($sizes as $size): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($size['id']); ?></td>
-                            <td><strong><?php echo htmlspecialchars($size['name'] ?? $size['size'] ?? ''); ?></strong></td>
-                            <td><?php echo htmlspecialchars($size['description'] ?? ''); ?></td>
-                            <td>
-                                <span class="status-badge <?php echo $size['is_active'] ? 'active' : 'inactive'; ?>">
-                                    <?php echo $size['is_active'] ? 'Active' : 'Inactive'; ?>
-                                </span>
-                            </td>
-                            <td>
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="action" value="toggle_status">
-                                    <input type="hidden" name="size_id" value="<?php echo $size['id']; ?>">
-                                    <input type="hidden" name="new_status" value="<?php echo $size['is_active'] ? '0' : '1'; ?>">
-                                    <button type="submit" class="btn btn-sm <?php echo $size['is_active'] ? 'btn-warning' : 'btn-success'; ?>">
-                                        <?php echo $size['is_active'] ? 'Deactivate' : 'Activate'; ?>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="table-header">
+            <div class="table-title">
+                <h3>All Sizes (<?php echo $total_items; ?> total)</h3>
+            </div>
+            <div class="table-search">
+                <form method="GET" class="inline-search-form">
+                    <div class="search-input-group">
+                        <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Search sizes..." class="search-input">
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <?php if (!empty($search)): ?>
+                            <a href="sizes.php" class="clear-btn" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+            </div>
         </div>
+        
+        <?php if ($total_items > 0): ?>
+            <!-- Pagination Info -->
+            <div class="pagination-info">
+                Showing <?php echo ($offset + 1); ?> to <?php echo min($offset + $items_per_page, $total_items); ?> of <?php echo $total_items; ?> sizes
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Size</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($sizes as $size): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($size['id']); ?></td>
+                                <td><strong><?php echo htmlspecialchars($size['name'] ?? $size['size'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($size['description'] ?? ''); ?></td>
+                                <td>
+                                    <span class="status-badge <?php echo $size['is_active'] ? 'active' : 'inactive'; ?>">
+                                        <?php echo $size['is_active'] ? 'Active' : 'Inactive'; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="action" value="toggle_status">
+                                        <input type="hidden" name="size_id" value="<?php echo $size['id']; ?>">
+                                        <input type="hidden" name="new_status" value="<?php echo $size['is_active'] ? '0' : '1'; ?>">
+                                        <button type="submit" class="btn btn-sm <?php echo $size['is_active'] ? 'btn-warning' : 'btn-success'; ?>">
+                                            <?php echo $size['is_active'] ? 'Deactivate' : 'Activate'; ?>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <?php if ($total_pages > 1): ?>
+                <div class="pagination">
+                    <?php if ($current_page > 1): ?>
+                        <a href="?page=1<?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="btn btn-secondary">
+                            <i class="fas fa-angle-double-left"></i> First
+                        </a>
+                        <a href="?page=<?php echo $current_page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="btn btn-secondary">
+                            <i class="fas fa-angle-left"></i> Previous
+                        </a>
+                    <?php endif; ?>
+
+                    <?php
+                    $start_page = max(1, $current_page - 2);
+                    $end_page = min($total_pages, $current_page + 2);
+                    
+                    for ($i = $start_page; $i <= $end_page; $i++):
+                    ?>
+                        <a href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" 
+                           class="btn <?php echo $i == $current_page ? 'btn-primary' : 'btn-secondary'; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($current_page < $total_pages): ?>
+                        <a href="?page=<?php echo $current_page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="btn btn-secondary">
+                            Next <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page=<?php echo $total_pages; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" class="btn btn-secondary">
+                            Last <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <div class="no-results">
+                <p>No sizes found<?php echo !empty($search) ? ' matching your search criteria' : ''; ?>.</p>
+                <?php if (!empty($search)): ?>
+                    <a href="sizes.php" class="btn btn-primary">View All Sizes</a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -267,6 +383,188 @@ if (file_exists('includes/header.php')) {
 .form-group button {
     align-self: flex-end;
     margin-top: 10px;
+}
+
+.search-form .form-row {
+    grid-template-columns: 1fr auto;
+}
+
+.search-form .form-group {
+    margin-bottom: 0;
+}
+
+.pagination-info {
+    margin-bottom: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.pagination .btn {
+    min-width: 40px;
+    text-align: center;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.no-results p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+/* New integrated search styles */
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.table-title h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.table-search {
+    flex-shrink: 0;
+}
+
+.inline-search-form {
+    margin: 0;
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.search-input-group:focus-within {
+    border-color: #243c55;
+    box-shadow: 0 2px 8px rgba(36, 60, 85, 0.2);
+}
+
+.search-input {
+    border: none;
+    padding: 10px 15px;
+    font-size: 14px;
+    background: transparent;
+    outline: none;
+    min-width: 250px;
+    flex: 1;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.search-btn {
+    background: #243c55;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-btn:hover {
+    background: #1a2d3f;
+}
+
+.clear-btn {
+    background: #8b2635;
+    color: white;
+    border: none;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    margin-left: 1px;
+}
+
+.clear-btn:hover {
+    background: #7a1f2d;
+    color: white;
+    text-decoration: none;
+}
+
+/* Responsive design for integrated search */
+@media (max-width: 991px) {
+    .table-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .table-search {
+        width: 100%;
+    }
+    
+    .search-input-group {
+        width: 100%;
+    }
+    
+    .search-input {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 767px) {
+    .table-title h3 {
+        font-size: 1.3rem;
+    }
+    
+    .search-input {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .search-btn,
+    .clear-btn {
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 575px) {
+    .table-title h3 {
+        font-size: 1.2rem;
+    }
+    
+    .search-input {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .search-btn,
+    .clear-btn {
+        padding: 6px 10px;
+    }
 }
 
 table {
@@ -414,6 +712,19 @@ th {
         align-self: stretch;
         width: 100%;
     }
+    
+    .search-form .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .pagination {
+        gap: 5px;
+    }
+    
+    .pagination .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 767px) {
@@ -450,6 +761,16 @@ th {
     .btn-sm {
         padding: 4px 8px;
         font-size: 11px;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .pagination .btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 
