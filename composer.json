@@ -3,7 +3,9 @@
   "description": "GT Automotives - Premium Tire Shop Web Application",
   "type": "project",
   "require": {
-    "php": ">=7.4"
+    "php": ">=7.4",
+    "nyholm/psr7": "^1.8",
+    "guzzlehttp/guzzle": "^7.9"
   },
   "autoload": {
     "psr-4": {
@@ -11,6 +13,9 @@
     }
   },
   "config": {
-    "optimize-autoloader": true
+    "optimize-autoloader": true,
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   }
 }
