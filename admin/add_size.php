@@ -54,7 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (empty($errors)) {
-        $stmt = $conn->prepare("INSERT INTO sizes (name, description, is_active, sort_order) VALUES (?, ?, ?, ?)");
+        // Check which column exists in the database
+        $check_column = $conn->query("SHOW COLUMNS FROM sizes LIKE 'name'");
+        $column_name = ($check_column && $check_column->num_rows > 0) ? 'name' : 'size';
+        
+        $stmt = $conn->prepare("INSERT INTO sizes ($column_name, description, is_active, sort_order) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("ssii", $name, $description, $is_active, $sort_order);
         
         if ($stmt->execute()) {

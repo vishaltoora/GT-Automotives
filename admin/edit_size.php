@@ -75,7 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (empty($errors)) {
-        $stmt = $conn->prepare("UPDATE sizes SET name = ?, description = ?, is_active = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        // Check which column exists in the database
+        $check_column = $conn->query("SHOW COLUMNS FROM sizes LIKE 'name'");
+        $column_name = ($check_column && $check_column->num_rows > 0) ? 'name' : 'size';
+        
+        $stmt = $conn->prepare("UPDATE sizes SET $column_name = ?, description = ?, is_active = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->bind_param("ssiii", $name, $description, $is_active, $sort_order, $size_id);
         
         if ($stmt->execute()) {
@@ -105,7 +109,7 @@ include_once 'includes/header.php';
         <div class="form-row">
             <div class="form-group">
                 <label for="name">Size Name *</label>
-                <input type="text" name="name" id="name" value="<?php echo htmlspecialchars($_POST['name'] ?? $size['name']); ?>" required maxlength="50">
+                <input type="text" name="name" id="name" value="<?php echo htmlspecialchars($_POST['name'] ?? $size['name'] ?? $size['size'] ?? ''); ?>" required maxlength="50">
                 <small class="form-text">Enter the tire size (e.g., 205/55R16)</small>
             </div>
             

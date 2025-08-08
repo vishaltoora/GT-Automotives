@@ -39,7 +39,11 @@ try {
             }
             
             if (empty($errors) && isset($conn)) {
-                $insert_query = "INSERT INTO sizes (name, description, is_active, sort_order) VALUES (?, ?, 1, 0)";
+                // Check which column exists in the database
+                $check_column = $conn->query("SHOW COLUMNS FROM sizes LIKE 'name'");
+                $column_name = ($check_column && $check_column->num_rows > 0) ? 'name' : 'size';
+                
+                $insert_query = "INSERT INTO sizes ($column_name, description, is_active, sort_order) VALUES (?, ?, 1, 0)";
                 $stmt = $conn->prepare($insert_query);
                 
                 if ($stmt) {
@@ -163,7 +167,7 @@ if (file_exists('includes/header.php')) {
                     <?php foreach ($sizes as $size): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($size['id']); ?></td>
-                            <td><strong><?php echo htmlspecialchars($size['name']); ?></strong></td>
+                            <td><strong><?php echo htmlspecialchars($size['name'] ?? $size['size'] ?? ''); ?></strong></td>
                             <td><?php echo htmlspecialchars($size['description'] ?? ''); ?></td>
                             <td>
                                 <span class="status-badge <?php echo $size['is_active'] ? 'active' : 'inactive'; ?>">
