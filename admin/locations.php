@@ -80,16 +80,28 @@ if (file_exists('includes/header.php')) {
                 </div>
                 
                 <div class="location-details">
-                    <?php if (!empty($location['description'])): ?>
-                        <div class="detail-item">
-                            <i class="fas fa-info-circle"></i>
-                            <span><?php echo htmlspecialchars($location['description']); ?></span>
-                        </div>
-                    <?php endif; ?>
                     <div class="detail-item">
                         <i class="fas fa-map-marker-alt"></i>
                         <span><?php echo htmlspecialchars($location['address']); ?></span>
                     </div>
+                    <?php if (!empty($location['phone'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-phone"></i>
+                            <span><?php echo htmlspecialchars($location['phone']); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($location['email'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <span><?php echo htmlspecialchars($location['email']); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($location['hours'])): ?>
+                        <div class="detail-item">
+                            <i class="fas fa-clock"></i>
+                            <span><?php echo htmlspecialchars($location['hours']); ?></span>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="location-actions">

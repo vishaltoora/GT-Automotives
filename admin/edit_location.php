@@ -41,16 +41,11 @@ if (!$location) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get form data
     $name = trim($_POST['name'] ?? '');
-    $description = trim($_POST['description'] ?? '');
     $address = trim($_POST['address'] ?? '');
-    $contact_person = trim($_POST['contact_person'] ?? '');
-    $contact_phone = trim($_POST['contact_phone'] ?? '');
-    $contact_email = trim($_POST['contact_email'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $hours = trim($_POST['hours'] ?? '');
     $is_active = isset($_POST['is_active']) ? 1 : 0;
-    $sort_order = intval($_POST['sort_order'] ?? 0);
     
     // Validate input
     $errors = [];
@@ -59,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Location name is required';
     }
     
-    if (!empty($contact_email) && !filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Invalid contact email format';
+    if (empty($address)) {
+        $errors[] = 'Address is required';
     }
     
     if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -68,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (empty($errors)) {
-        $stmt = $conn->prepare("UPDATE locations SET name = ?, description = ?, address = ?, contact_person = ?, contact_phone = ?, contact_email = ?, phone = ?, email = ?, hours = ?, is_active = ?, sort_order = ? WHERE id = ?");
-        $stmt->bind_param("sssssssssiii", $name, $description, $address, $contact_person, $contact_phone, $contact_email, $phone, $email, $hours, $is_active, $sort_order, $location_id);
+        $stmt = $conn->prepare("UPDATE locations SET name = ?, address = ?, phone = ?, email = ?, hours = ?, is_active = ? WHERE id = ?");
+        $stmt->bind_param("sssssii", $name, $address, $phone, $email, $hours, $is_active, $location_id);
         
         if ($stmt->execute()) {
             // Success - set message and redirect
@@ -102,48 +97,19 @@ include_once 'includes/header.php';
         
         <div class="form-row">
             <div class="form-group">
-                <label for="description">Description</label>
-                <textarea name="description" id="description" rows="3"><?php echo htmlspecialchars($_POST['description'] ?? $location['description'] ?? ''); ?></textarea>
+                <label for="address">Address *</label>
+                <textarea name="address" id="address" rows="2" required><?php echo htmlspecialchars($_POST['address'] ?? $location['address'] ?? ''); ?></textarea>
             </div>
         </div>
         
         <div class="form-row">
             <div class="form-group">
-                <label for="address">Address</label>
-                <textarea name="address" id="address" rows="2"><?php echo htmlspecialchars($_POST['address'] ?? $location['address'] ?? ''); ?></textarea>
-            </div>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label for="contact_person">Contact Person</label>
-                <input type="text" name="contact_person" id="contact_person" value="<?php echo htmlspecialchars($_POST['contact_person'] ?? $location['contact_person'] ?? ''); ?>">
-            </div>
-            <div class="form-group">
-                <label for="contact_phone">Contact Phone</label>
-                <input type="tel" name="contact_phone" id="contact_phone" value="<?php echo htmlspecialchars($_POST['contact_phone'] ?? $location['contact_phone'] ?? ''); ?>">
-            </div>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label for="contact_email">Contact Email</label>
-                <input type="email" name="contact_email" id="contact_email" value="<?php echo htmlspecialchars($_POST['contact_email'] ?? $location['contact_email'] ?? ''); ?>">
-            </div>
-            <div class="form-group">
-                <label for="phone">General Phone</label>
+                <label for="phone">Phone</label>
                 <input type="tel" name="phone" id="phone" value="<?php echo htmlspecialchars($_POST['phone'] ?? $location['phone'] ?? ''); ?>">
             </div>
-        </div>
-        
-        <div class="form-row">
             <div class="form-group">
-                <label for="email">General Email</label>
+                <label for="email">Email</label>
                 <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($_POST['email'] ?? $location['email'] ?? ''); ?>">
-            </div>
-            <div class="form-group">
-                <label for="sort_order">Sort Order</label>
-                <input type="number" name="sort_order" id="sort_order" value="<?php echo htmlspecialchars($_POST['sort_order'] ?? $location['sort_order'] ?? 0); ?>">
             </div>
         </div>
         
