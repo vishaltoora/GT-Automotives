@@ -4,16 +4,30 @@
 # Enable rewrite engine
 RewriteEngine On
 
-# Force HTTPS in production
-RewriteCond %{HTTPS} off
-RewriteCond %{HTTP_HOST} ^(www\.)?gt-automotives\.com$ [NC]
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# Force HTTPS in production (only if mod_rewrite is available)
+<IfModule mod_rewrite.c>
+    # Force HTTPS in production
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} ^(www\.)?gt-automotives\.com$ [NC]
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    
+    # Remove trailing slashes
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)/$ /$1 [L,R=301]
+    
+    # Protect sensitive directories
+    RewriteRule ^includes/ - [F,L]
+    RewriteRule ^storage/ - [F,L]
+    RewriteRule ^vendor/ - [F,L]
+    RewriteRule ^bootstrap/ - [F,L]
+    RewriteRule ^config/ - [F,L]
+    RewriteRule ^database/ - [F,L]
+    RewriteRule ^resources/ - [F,L]
+    RewriteRule ^routes/ - [F,L]
+    RewriteRule ^app/ - [F,L]
+</IfModule>
 
-# Remove trailing slashes
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)/$ /$1 [L,R=301]
-
-# Security headers
+# Security headers (only if mod_headers is available)
 <IfModule mod_headers.c>
     # Prevent clickjacking
     Header always append X-Frame-Options SAMEORIGIN
@@ -27,15 +41,12 @@ RewriteRule ^(.*)/$ /$1 [L,R=301]
     # Referrer policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     
-    # Content Security Policy
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self';"
-    
     # Remove server signature
     Header unset Server
     Header unset X-Powered-By
 </IfModule>
 
-# Performance optimizations
+# Performance optimizations (only if modules are available)
 <IfModule mod_expires.c>
     ExpiresActive On
     
@@ -61,7 +72,7 @@ RewriteRule ^(.*)/$ /$1 [L,R=301]
     ExpiresByType text/html "access plus 1 hour"
 </IfModule>
 
-# Compression
+# Compression (only if mod_deflate is available)
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/plain
     AddOutputFilterByType DEFLATE text/html
@@ -91,19 +102,6 @@ RewriteRule ^(.*)/$ /$1 [L,R=301]
     Deny from all
 </Files>
 
-# Protect includes directory
-<IfModule mod_rewrite.c>
-    RewriteRule ^includes/ - [F,L]
-    RewriteRule ^storage/ - [F,L]
-    RewriteRule ^vendor/ - [F,L]
-    RewriteRule ^bootstrap/ - [F,L]
-    RewriteRule ^config/ - [F,L]
-    RewriteRule ^database/ - [F,L]
-    RewriteRule ^resources/ - [F,L]
-    RewriteRule ^routes/ - [F,L]
-    RewriteRule ^app/ - [F,L]
-</IfModule>
-
 # Custom error pages
 ErrorDocument 404 /404.php
 ErrorDocument 500 /500.php
@@ -121,16 +119,7 @@ ErrorDocument 403 /403.php
     Deny from all
 </FilesMatch>
 
-# Rate limiting for admin panel
-<Location "/admin/">
-    # Limit requests to admin panel
-    <IfModule mod_ratelimit.c>
-        SetOutputFilter RATE_LIMIT
-        SetEnv rate-limit 400
-    </IfModule>
-</Location>
-
-# PHP settings
+# PHP settings (only if mod_php is available)
 <IfModule mod_php.c>
     php_value upload_max_filesize 40M
     php_value post_max_size 40M
@@ -145,7 +134,7 @@ ErrorDocument 403 /403.php
     php_value session.cookie_samesite "Strict"
 </IfModule>
 
-# Custom logging
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %{X-Forwarded-For}i" custom
-CustomLog /opt/bitnami/apache/logs/gt_automotives_access.log custom
-ErrorLog /opt/bitnami/apache/logs/gt_automotives_error.log 
+# Custom logging (only if custom log paths are accessible)
+# LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %{X-Forwarded-For}i" custom
+# CustomLog /opt/bitnami/apache/logs/gt_automotives_access.log custom
+# ErrorLog /opt/bitnami/apache/logs/gt_automotives_error.log 

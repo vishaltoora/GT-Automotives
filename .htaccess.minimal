@@ -1,0 +1,37 @@
+# GT Automotives Minimal .htaccess
+# This is a minimal version for servers with limited module support
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Basic security - protect sensitive directories
+RewriteRule ^includes/ - [F,L]
+RewriteRule ^storage/ - [F,L]
+RewriteRule ^vendor/ - [F,L]
+RewriteRule ^bootstrap/ - [F,L]
+RewriteRule ^config/ - [F,L]
+RewriteRule ^database/ - [F,L]
+RewriteRule ^resources/ - [F,L]
+RewriteRule ^routes/ - [F,L]
+RewriteRule ^app/ - [F,L]
+
+# Protect sensitive files
+<Files ".env*">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "composer.*">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "*.log">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Basic error pages
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+ErrorDocument 403 /403.php 
