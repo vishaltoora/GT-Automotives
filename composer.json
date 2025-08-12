@@ -5,7 +5,8 @@
   "require": {
     "php": ">=7.4",
     "nyholm/psr7": "^1.8",
-    "guzzlehttp/guzzle": "^7.9"
+    "guzzlehttp/guzzle": "^7.9",
+    "laravel/framework": "^12.22"
   },
   "autoload": {
     "psr-4": {
