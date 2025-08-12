@@ -22,7 +22,15 @@ function isAdmin() {
 // Function to redirect to login page if not logged in
 function requireLogin() {
     if (!isLoggedIn()) {
-        header("Location: login.php");
+        // Determine the correct path to login.php
+        $current_path = $_SERVER['SCRIPT_NAME'] ?? '';
+        if (strpos($current_path, '/admin/') !== false) {
+            // We're in admin directory, redirect to admin login
+            header("Location: login.php");
+        } else {
+            // We're in another directory, redirect to admin login
+            header("Location: admin/login.php");
+        }
         exit;
     }
 }
@@ -31,7 +39,15 @@ function requireLogin() {
 function requireAdmin() {
     requireLogin();
     if (!isAdmin()) {
-        header("Location: index.php");
+        // Determine the correct path to index.php
+        $current_path = $_SERVER['SCRIPT_NAME'] ?? '';
+        if (strpos($current_path, '/admin/') !== false) {
+            // We're in admin directory, redirect to admin index
+            header("Location: index.php");
+        } else {
+            // We're in another directory, redirect to admin index
+            header("Location: admin/index.php");
+        }
         exit;
     }
 }

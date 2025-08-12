@@ -4,12 +4,27 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Debug mode - show additional information
+$debug_mode = isset($_GET['debug']) || ($_SERVER['SERVER_NAME'] ?? '') === 'localhost';
+
 // Include database connection
 require_once '../includes/db_connect.php';
 require_once '../includes/auth.php';
 
 // Require login
 requireLogin();
+
+// Debug information
+if ($debug_mode) {
+    echo "<div style='background: #f0f0f0; padding: 10px; margin: 10px; border: 1px solid #ccc;'>";
+    echo "<strong>Debug Information:</strong><br>";
+    echo "Server: " . ($_SERVER['SERVER_NAME'] ?? 'Unknown') . "<br>";
+    echo "Database connected: " . (isset($conn) && $conn->ping() ? 'Yes' : 'No') . "<br>";
+    echo "Session ID: " . session_id() . "<br>";
+    echo "User logged in: " . (isset($_SESSION['user_id']) ? 'Yes (ID: ' . $_SESSION['user_id'] . ')' : 'No') . "<br>";
+    echo "Environment: " . (($_SERVER['SERVER_NAME'] ?? '') !== 'localhost' && ($_SERVER['SERVER_NAME'] ?? '') !== '127.0.0.1' ? 'Production' : 'Development') . "<br>";
+    echo "</div>";
+}
 
 // Set page title
 $page_title = 'Create New Sale';
