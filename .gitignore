@@ -14,6 +14,10 @@ logs/
 cache/
 tmp/
 
+# Storage (Laravel runtime data)
+storage/
+storage/*
+
 # IDE files
 .vscode/
 .idea/
