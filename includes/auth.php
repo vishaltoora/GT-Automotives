@@ -4,6 +4,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Include production configuration if available
+if (file_exists(dirname(__DIR__) . '/includes/production_config.php')) {
+    require_once dirname(__DIR__) . '/includes/production_config.php';
+}
+
 // Function to check if user is logged in
 function isLoggedIn() {
     return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
@@ -80,5 +85,23 @@ function logout() {
     // Redirect to home page
     header("Location: ../index.php");
     exit;
+}
+
+// Production session security enhancements
+if (function_exists('isProduction') && isProduction()) {
+    // Set secure session parameters for production
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        ini_set('session.cookie_secure', 1);
+    }
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_samesite', 'Strict');
+    
+    // Regenerate session ID periodically for security
+    if (!isset($_SESSION['last_regeneration'])) {
+        $_SESSION['last_regeneration'] = time();
+    } elseif (time() - $_SESSION['last_regeneration'] > 300) { // 5 minutes
+        session_regenerate_id(true);
+        $_SESSION['last_regeneration'] = time();
+    }
 }
 ?> 

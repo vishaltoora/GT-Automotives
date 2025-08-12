@@ -3,6 +3,11 @@
 // Check if we're in production or development
 $is_production = ($_SERVER['SERVER_NAME'] ?? '') !== 'localhost' && ($_SERVER['SERVER_NAME'] ?? '') !== '127.0.0.1';
 
+// Include production configuration if available
+if (file_exists(dirname(__DIR__) . '/includes/production_config.php')) {
+    require_once dirname(__DIR__) . '/includes/production_config.php';
+}
+
 // Try to load environment variables if available
 if (file_exists(dirname(__DIR__) . '/.env')) {
     $env_file = file_get_contents(dirname(__DIR__) . '/.env');
@@ -19,6 +24,12 @@ if (file_exists(dirname(__DIR__) . '/.env')) {
     $dbname = $env_vars['DB_DATABASE'] ?? 'gt_automotives';
     $username = $env_vars['DB_USERNAME'] ?? 'gtadmin';
     $password = $env_vars['DB_PASSWORD'] ?? 'Vishal@1234#';
+} elseif ($is_production && function_exists('getProductionConfig')) {
+    // Use production configuration
+    $host = getProductionConfig('DB_HOST', 'localhost');
+    $dbname = getProductionConfig('DB_NAME', 'gt_automotives');
+    $username = getProductionConfig('DB_USER', 'gtadmin');
+    $password = getProductionConfig('DB_PASS', 'Vishal@1234#');
 } else {
     // Fallback to hardcoded values
     if ($is_production) {

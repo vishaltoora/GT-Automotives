@@ -81,7 +81,6 @@ try {
             if ($conn->ping()) {
                 echo "<p class='success'>✓ Database connection successful</p>";
                 echo "<p><strong>Host:</strong> " . $conn->host_info . "</p>";
-                echo "<p><strong>Database:</strong> " . $conn->database . "</p>";
                 
                 // Test a simple query
                 $result = $conn->query("SELECT COUNT(*) as count FROM tires");
