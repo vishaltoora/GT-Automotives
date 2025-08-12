@@ -7,9 +7,12 @@ if (session_status() === PHP_SESSION_NONE) {
 // Debug mode - show additional information
 $debug_mode = isset($_GET['debug']) || ($_SERVER['SERVER_NAME'] ?? '') === 'localhost';
 
+// Set base path for includes
+$base_path = dirname(__DIR__);
+
 // Include database connection
-require_once '../includes/db_connect.php';
-require_once '../includes/auth.php';
+require_once $base_path . '/includes/db_connect.php';
+require_once $base_path . '/includes/auth.php';
 
 // Require login
 requireLogin();
@@ -294,9 +297,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $sale_query = "
                 INSERT INTO sales (
-                    invoice_number, customer_name, customer_business_name, customer_email, customer_phone, customer_address,
-                    subtotal, gst_rate, gst_amount, pst_rate, pst_amount, total_amount, payment_method, payment_status, notes, created_by
-                ) VALUES (
                     '$escaped_invoice_number', '$escaped_customer_name', '$escaped_customer_business_name', '$escaped_customer_email', 
                     '$escaped_customer_phone', '$escaped_customer_address', $subtotal, $gst_rate, $gst_amount, $pst_rate, 
                     $pst_amount, $total_amount, '$escaped_payment_method', '$escaped_payment_status', '$escaped_notes', $user_id
@@ -341,7 +341,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Include header
-include_once 'includes/header.php';
+include_once $base_path . '/admin/includes/header.php';
 ?>
 
 <?php if (isset($error_message)): ?>
@@ -1072,5 +1072,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <?php
 // Include footer
-include_once 'includes/footer.php';
+include_once $base_path . '/admin/includes/footer.php';
 ?> 

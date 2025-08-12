@@ -26,21 +26,20 @@ echo "Base Path: " . $base_path . "<br>";
 echo "Current Directory: " . getcwd() . "<br>";
 
 $files_to_check = [
-    '../includes/db_connect.php',
-    '../includes/auth.php',
-    'includes/header.php',
-    'includes/footer.php'
+    'includes/db_connect.php' => $base_path . '/includes/db_connect.php',
+    'includes/auth.php' => $base_path . '/includes/auth.php',
+    'admin/includes/header.php' => $base_path . '/admin/includes/header.php',
+    'admin/includes/footer.php' => $base_path . '/admin/includes/footer.php'
 ];
 
-foreach ($files_to_check as $file) {
-    $full_path = $base_path . '/' . $file;
+foreach ($files_to_check as $file => $full_path) {
     echo "File: " . $file . " - " . (file_exists($full_path) ? 'Exists' : 'Missing') . " (" . $full_path . ")<br>";
 }
 
 // Test 4: Database Connection
 echo "<h2>4. Database Connection</h2>";
 try {
-    require_once '../includes/db_connect.php';
+    require_once $base_path . '/includes/db_connect.php';
     if (isset($conn) && $conn instanceof mysqli) {
         echo "Database connection: Success<br>";
         echo "Database host: " . $conn->host_info . "<br>";
@@ -74,7 +73,7 @@ echo "Session writable: " . (is_writable(session_save_path()) ? 'Yes' : 'No') . 
 // Test 6: Authentication
 echo "<h2>6. Authentication</h2>";
 try {
-    require_once '../includes/auth.php';
+    require_once $base_path . '/includes/auth.php';
     echo "Auth file loaded: Success<br>";
     
     // Test auth functions
@@ -118,14 +117,13 @@ echo "Error log: " . (ini_get('error_log') ?: 'Default') . "<br>";
 // Test 9: Permissions
 echo "<h2>9. File Permissions</h2>";
 $dirs_to_check = [
-    '../includes',
-    '../uploads',
-    '../storage',
-    'includes'
+    'includes' => $base_path . '/includes',
+    'uploads' => $base_path . '/uploads',
+    'storage' => $base_path . '/storage',
+    'admin/includes' => $base_path . '/admin/includes'
 ];
 
-foreach ($dirs_to_check as $dir) {
-    $full_path = $base_path . '/' . $dir;
+foreach ($dirs_to_check as $dir => $full_path) {
     if (is_dir($full_path)) {
         echo "Directory '$dir': " . (is_readable($full_path) ? 'Readable' : 'Not readable') . 
              ", " . (is_writable($full_path) ? 'Writable' : 'Not writable') . "<br>";

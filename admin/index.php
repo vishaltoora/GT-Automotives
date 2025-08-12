@@ -1,12 +1,16 @@
 <?php
+
+// Set base path for includes
+$base_path = dirname(__DIR__);
+
 // Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // Include database connection
-require_once '../includes/db_connect.php';
-require_once '../includes/auth.php';
+require_once '$base_path . '/includes/db_connect.php'';
+require_once '$base_path . '/includes/auth.php'';
 
 // Require login
 requireLogin();
